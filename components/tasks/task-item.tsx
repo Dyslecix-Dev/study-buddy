@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { GripVertical, Trash2, Calendar, Edit2 } from "lucide-react";
 import { format } from "date-fns";
+import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 
 interface Task {
   id: string;
@@ -43,6 +44,7 @@ const priorityBadgeColors = {
 export default function TaskItem({ task, onToggleComplete, onDelete, onEdit, dragHandleProps }: TaskItemProps) {
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleToggle = async () => {
     setLoading(true);
@@ -53,13 +55,17 @@ export default function TaskItem({ task, onToggleComplete, onDelete, onEdit, dra
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this task?")) return;
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
     setDeleteLoading(true);
     try {
       await onDelete(task.id);
     } finally {
       setDeleteLoading(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -89,7 +95,7 @@ export default function TaskItem({ task, onToggleComplete, onDelete, onEdit, dra
               <button onClick={() => onEdit(task)} className="text-gray-400 hover:text-blue-600 transition-colors" title="Edit task">
                 <Edit2 size={16} />
               </button>
-              <button onClick={handleDelete} disabled={deleteLoading} className="text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50" title="Delete task">
+              <button onClick={handleDeleteClick} disabled={deleteLoading} className="text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50" title="Delete task">
                 <Trash2 size={16} />
               </button>
             </div>
@@ -112,6 +118,14 @@ export default function TaskItem({ task, onToggleComplete, onDelete, onEdit, dra
           </div>
         </div>
       </div>
+
+      <DeleteConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title="Delete Task?"
+        description="Are you sure you want to delete this task? This action cannot be undone."
+      />
     </div>
   );
 }

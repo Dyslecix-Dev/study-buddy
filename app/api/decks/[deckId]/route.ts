@@ -27,11 +27,11 @@ export async function GET(_request: NextRequest, { params }: Params) {
         userId: user.id,
       },
       include: {
-        flashcards: {
+        Flashcard: {
           orderBy: { createdAt: 'asc' },
         },
         _count: {
-          select: { flashcards: true },
+          select: { Flashcard: true },
         },
       },
     })
@@ -85,7 +85,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       data: updateData,
       include: {
         _count: {
-          select: { flashcards: true },
+          select: { Flashcard: true },
         },
       },
     })

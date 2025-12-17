@@ -17,7 +17,7 @@ interface Flashcard {
 interface Deck {
   id: string
   name: string
-  flashcards: Flashcard[]
+  Flashcard: Flashcard[]
 }
 
 export default function StudyPage({
@@ -102,7 +102,7 @@ export default function StudyPage({
       </nav>
 
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <StudySession deckId={deckId} flashcards={deck.flashcards} />
+        <StudySession deckId={deckId} flashcards={deck.Flashcard} />
       </div>
     </div>
   )

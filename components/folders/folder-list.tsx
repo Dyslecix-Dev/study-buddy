@@ -1,0 +1,89 @@
+"use client";
+
+import Link from "next/link";
+import { Folder as FolderIcon, Edit2, Trash2, FileText } from "lucide-react";
+
+interface Folder {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  _count: {
+    notes: number;
+  };
+}
+
+interface FolderListProps {
+  folders: Folder[];
+  onEdit: (folder: Folder) => void;
+  onDelete: (id: string) => void;
+}
+
+const colorClasses: { [key: string]: string } = {
+  blue: "bg-blue-100 text-blue-700",
+  green: "bg-green-100 text-green-700",
+  purple: "bg-purple-100 text-purple-700",
+  yellow: "bg-yellow-100 text-yellow-700",
+  red: "bg-red-100 text-red-700",
+  pink: "bg-pink-100 text-pink-700",
+  default: "bg-gray-100 text-gray-700",
+};
+
+export default function FolderList({ folders, onEdit, onDelete }: FolderListProps) {
+  if (folders.length === 0) {
+    return (
+      <div className="text-center py-12 bg-white rounded-lg shadow">
+        <FolderIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+        <p className="text-gray-500">No folders yet. Create one to organize your notes!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {folders.map((folder) => {
+        const colorClass = colorClasses[folder.color || "default"] || colorClasses.default;
+
+        return (
+          <div key={folder.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
+            <div className={`p-4 ${colorClass}`}>
+              <div className="flex items-center justify-between">
+                <FolderIcon size={24} />
+                <span className="text-sm font-medium">{folder._count.notes} notes</span>
+              </div>
+            </div>
+
+            <div className="p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{folder.name}</h3>
+              {folder.description && <p className="text-sm text-gray-600 mb-4 line-clamp-2">{folder.description}</p>}
+
+              <div className="flex gap-2">
+                <Link
+                  href={`/notes/${folder.id}`}
+                  className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                >
+                  <FileText size={16} className="mr-1" />
+                  View Notes
+                </Link>
+                <button
+                  onClick={() => onEdit(folder)}
+                  className="inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  title="Edit folder"
+                >
+                  <Edit2 size={16} />
+                </button>
+                <button
+                  onClick={() => onDelete(folder.id)}
+                  className="inline-flex items-center justify-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors"
+                  title="Delete folder"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

@@ -18,7 +18,7 @@ export async function GET() {
       where: { userId: user.id },
       include: {
         _count: {
-          select: { flashcards: true },
+          select: { Flashcard: true },
         },
       },
       orderBy: { updatedAt: 'desc' },
@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      console.error('POST /api/decks - Unauthorized: No user found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -47,8 +48,11 @@ export async function POST(request: NextRequest) {
     const { name, description, color } = body
 
     if (!name) {
+      console.error('POST /api/decks - Bad request: Name is required')
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
+
+    console.log('Creating deck for user:', user.id, 'with data:', { name, description, color })
 
     const deck = await prisma.deck.create({
       data: {
@@ -59,14 +63,19 @@ export async function POST(request: NextRequest) {
       },
       include: {
         _count: {
-          select: { flashcards: true },
+          select: { Flashcard: true },
         },
       },
     })
 
+    console.log('Deck created successfully:', deck.id)
     return NextResponse.json(deck, { status: 201 })
   } catch (error) {
     console.error('Error creating deck:', error)
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
     return NextResponse.json({ error: 'Failed to create deck' }, { status: 500 })
   }
 }

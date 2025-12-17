@@ -1,177 +1,162 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
-// User model for authentication
-model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  name          String?
-  image         String?
-  emailVerified DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  // Relations
-  notes         Note[]
-  tasks         Task[]
-  decks         Deck[]
-  sessions      StudySession[]
-
-  @@index([email])
-}
-
-// Note model for rich text notes
-model Note {
-  id            String   @id @default(cuid())
-  title         String
-  content       Json     // Tiptap JSON format
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  folderId      String?
-  folder        Folder?  @relation(fields: [folderId], references: [id])
-  tags          Tag[]
-  linkedNotes   NoteLink[] @relation("NoteFrom")
-  linkedBy      NoteLink[] @relation("NoteTo")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+model Deck {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  color       String?
+  userId      String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  User        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Flashcard   Flashcard[]
+  Tag         Tag[]
 
   @@index([userId])
-  @@index([userId, createdAt])
-  @@index([folderId])
 }
 
-// Folder organization for notes
+model Flashcard {
+  id           String    @id @default(uuid())
+  front        String
+  back         String
+  deckId       String
+  easeFactor   Float     @default(2.5)
+  interval     Int       @default(0)
+  repetitions  Int       @default(0)
+  nextReview   DateTime?
+  lastReviewed DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  Deck         Deck      @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  Review       Review[]
+
+  @@index([deckId])
+  @@index([nextReview])
+}
+
 model Folder {
-  id            String   @id @default(cuid())
-  name          String
-  color         String?
-  notes         Note[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id          String   @id @default(uuid())
+  name        String
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  description String?
+  userId      String
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Note        Note[]
+
+  @@index([userId])
 }
 
-// Note linking (wiki-style)
+model Note {
+  id                                 String     @id @default(uuid())
+  title                              String
+  content                            Json
+  userId                             String
+  folderId                           String?
+  createdAt                          DateTime   @default(now())
+  updatedAt                          DateTime   @updatedAt
+  Folder                             Folder?    @relation(fields: [folderId], references: [id])
+  User                               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  NoteLink_NoteLink_fromNoteIdToNote NoteLink[] @relation("NoteLink_fromNoteIdToNote")
+  NoteLink_NoteLink_toNoteIdToNote   NoteLink[] @relation("NoteLink_toNoteIdToNote")
+  Tag                                Tag[]
+
+  @@index([folderId])
+  @@index([userId, createdAt])
+  @@index([userId])
+}
+
 model NoteLink {
-  id            String   @id @default(cuid())
-  fromNoteId    String
-  toNoteId      String
-  fromNote      Note     @relation("NoteFrom", fields: [fromNoteId], references: [id], onDelete: Cascade)
-  toNote        Note     @relation("NoteTo", fields: [toNoteId], references: [id], onDelete: Cascade)
-  createdAt     DateTime @default(now())
+  id                             String   @id @default(uuid())
+  fromNoteId                     String
+  toNoteId                       String
+  createdAt                      DateTime @default(now())
+  Note_NoteLink_fromNoteIdToNote Note     @relation("NoteLink_fromNoteIdToNote", fields: [fromNoteId], references: [id], onDelete: Cascade)
+  Note_NoteLink_toNoteIdToNote   Note     @relation("NoteLink_toNoteIdToNote", fields: [toNoteId], references: [id], onDelete: Cascade)
 
   @@unique([fromNoteId, toNoteId])
   @@index([fromNoteId])
   @@index([toNoteId])
 }
 
-// Task management
-model Task {
-  id            String   @id @default(cuid())
-  title         String
-  description   String?
-  completed     Boolean  @default(false)
-  dueDate       DateTime?
-  priority      Int      @default(0) // 0=Low, 1=Medium, 2=High
-  order         Int      @default(0) // For drag-drop ordering
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tags          Tag[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([userId])
-  @@index([userId, dueDate])
-  @@index([userId, completed])
-}
-
-// Flashcard deck
-model Deck {
-  id            String      @id @default(cuid())
-  name          String
-  description   String?
-  color         String?
-  userId        String
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  flashcards    Flashcard[]
-  tags          Tag[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  @@index([userId])
-}
-
-// Flashcard with spaced repetition data
-model Flashcard {
-  id            String   @id @default(cuid())
-  front         String
-  back          String
-  deckId        String
-  deck          Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
-
-  // Spaced repetition (SM-2 algorithm)
-  easeFactor    Float    @default(2.5)
-  interval      Int      @default(0)  // Days until next review
-  repetitions   Int      @default(0)
-  nextReview    DateTime?
-  lastReviewed  DateTime?
-
-  reviews       Review[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([deckId])
-  @@index([nextReview])
-}
-
-// Review history for flashcards
 model Review {
-  id            String     @id @default(cuid())
-  flashcardId   String
-  flashcard     Flashcard  @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
-  quality       Int        // 0-5 rating
-  createdAt     DateTime   @default(now())
+  id          String    @id @default(uuid())
+  flashcardId String
+  quality     Int
+  createdAt   DateTime  @default(now())
+  Flashcard   Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
 
-  @@index([flashcardId])
   @@index([createdAt])
+  @@index([flashcardId])
 }
 
-// Study sessions (Pomodoro tracking)
 model StudySession {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  duration      Int      // Minutes
-  type          String   // 'pomodoro', 'flashcard', 'note'
-  completed     Boolean  @default(false)
-  startedAt     DateTime @default(now())
-  endedAt       DateTime?
+  id        String    @id @default(uuid())
+  userId    String
+  duration  Int
+  type      String
+  completed Boolean   @default(false)
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, startedAt])
 }
 
-// Tags for organization
 model Tag {
-  id            String   @id @default(cuid())
-  name          String   @unique
-  color         String?
-  notes         Note[]
-  tasks         Task[]
-  decks         Deck[]
-  createdAt     DateTime @default(now())
+  id        String   @id @default(uuid())
+  name      String   @unique
+  color     String?
+  createdAt DateTime @default(now())
+  Deck      Deck[]
+  Note      Note[]
+  Task      Task[]
 
   @@index([name])
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  completed   Boolean   @default(false)
+  dueDate     DateTime?
+  priority    Int       @default(0)
+  order       Int       @default(0)
+  userId      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Tag         Tag[]
+
+  @@index([userId, completed])
+  @@index([userId, dueDate])
+  @@index([userId])
+}
+
+model User {
+  id            String         @id
+  email         String         @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  Deck          Deck[]
+  Folder        Folder[]
+  Note          Note[]
+  StudySession  StudySession[]
+  Task          Task[]
+
+  @@index([email])
 }

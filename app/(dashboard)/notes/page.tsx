@@ -1,80 +1,163 @@
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
-import LogoutButton from '@/components/logout-button'
-import { Plus, FileText } from 'lucide-react'
+"use client";
 
-export default async function NotesPage() {
-  const supabase = await createClient()
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import FolderList from "@/components/folders/folder-list";
+import { Plus, ArrowLeft, Folder } from "lucide-react";
+import { toast } from "sonner";
+import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+interface Folder {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  _count: {
+    notes: number;
+  };
+}
 
-  if (!user) {
-    redirect('/login')
-  }
+export default function NotesPage() {
+  const router = useRouter();
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    color: "",
+  });
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const notes = await prisma.note.findMany({
-    where: {
-      userId: user.id,
-    },
-    orderBy: {
-      updatedAt: 'desc',
-    },
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  })
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
-  // Extract plain text from HTML content for preview
-  const getPlainText = (html: any) => {
-    if (typeof html === 'string') {
-      return html.replace(/<[^>]*>/g, '').substring(0, 150)
+  useEffect(() => {
+    fetchFolders();
+  }, []);
+
+  const checkAuth = async () => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      router.push("/login");
     }
-    return ''
-  }
+  };
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    }).format(new Date(date))
+  const fetchFolders = async () => {
+    try {
+      const response = await fetch("/api/folders");
+      if (response.ok) {
+        const data = await response.json();
+        setFolders(data);
+      }
+    } catch (error) {
+      console.error("Error fetching folders:", error);
+      toast.error("Failed to load folders");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name.trim()) {
+      toast.error("Folder name is required");
+      return;
+    }
+
+    try {
+      const url = editingFolder ? `/api/folders/${editingFolder.id}` : "/api/folders";
+      const method = editingFolder ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        toast.success(editingFolder ? "Folder updated successfully" : "Folder created successfully");
+        setShowCreateForm(false);
+        setEditingFolder(null);
+        setFormData({ name: "", description: "", color: "" });
+        fetchFolders();
+      } else {
+        toast.error(editingFolder ? "Failed to update folder" : "Failed to create folder");
+      }
+    } catch (error) {
+      console.error("Error saving folder:", error);
+      toast.error("An error occurred");
+    }
+  };
+
+  const handleEdit = (folder: Folder) => {
+    setEditingFolder(folder);
+    setFormData({
+      name: folder.name,
+      description: folder.description || "",
+      color: folder.color || "",
+    });
+    setShowCreateForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeleteConfirm(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+
+    try {
+      const response = await fetch(`/api/folders/${deleteConfirm}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        toast.success("Folder deleted successfully");
+        fetchFolders();
+      } else {
+        toast.error("Failed to delete folder");
+      }
+    } catch (error) {
+      console.error("Error deleting folder:", error);
+      toast.error("An error occurred");
+    } finally {
+      setDeleteConfirm(null);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowCreateForm(false);
+    setEditingFolder(null);
+    setFormData({ name: "", description: "", color: "" });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-600">Loading folders...</p>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-8">
-              <Link href="/dashboard" className="text-xl font-semibold text-gray-900">
-                Study Buddy
-              </Link>
-              <div className="flex space-x-4">
-                <Link
-                  href="/notes"
-                  className="px-3 py-2 rounded-md text-sm font-medium bg-blue-100 text-blue-700"
-                >
-                  Notes
-                </Link>
-                <Link
-                  href="/dashboard"
-                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
-                >
-                  Dashboard
-                </Link>
-              </div>
-            </div>
-            <LogoutButton />
+          <div className="flex items-center h-16">
+            <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 mr-4">
+              <ArrowLeft size={20} />
+            </Link>
+            <h2 className="text-xl font-semibold text-gray-900">Notes</h2>
           </div>
         </div>
       </nav>
@@ -82,60 +165,105 @@ export default async function NotesPage() {
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Notes</h1>
+            <h1 className="text-3xl font-bold text-gray-900">My Folders</h1>
             <p className="mt-2 text-sm text-gray-600">
-              {notes.length} {notes.length === 1 ? 'note' : 'notes'}
+              {folders.length} {folders.length === 1 ? "folder" : "folders"}
             </p>
           </div>
-          <Link
-            href="/notes/new"
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <Plus className="mr-2" size={18} />
-            New Note
-          </Link>
+            New Folder
+          </button>
         </div>
 
-        {notes.length === 0 ? (
-          <div className="text-center py-12">
-            <FileText className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No notes</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating a new note.</p>
-            <div className="mt-6">
-              <Link
-                href="/notes/new"
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="mr-2" size={18} />
-                New Note
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {notes.map((note) => (
-              <Link
-                key={note.id}
-                href={`/notes/${note.id}`}
-                className="block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
-              >
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">
-                    {note.title || 'Untitled'}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-3">
-                    {getPlainText(note.content) || 'No content'}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>Updated</span>
-                    <span>{formatDate(note.updatedAt)}</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+        {/* Create/Edit Form */}
+        {showCreateForm && (
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">{editingFolder ? "Edit Folder" : "Create New Folder"}</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Folder Name *
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter folder name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                  Description (optional)
+                </label>
+                <textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter folder description"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-1">
+                  Color
+                </label>
+                <select
+                  id="color"
+                  value={formData.color}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Default</option>
+                  <option value="blue">Blue</option>
+                  <option value="green">Green</option>
+                  <option value="purple">Purple</option>
+                  <option value="yellow">Yellow</option>
+                  <option value="red">Red</option>
+                  <option value="pink">Pink</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  {editingFolder ? "Update Folder" : "Create Folder"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         )}
+
+        {/* Folders List */}
+        <FolderList folders={folders} onEdit={handleEdit} onDelete={handleDelete} />
       </div>
+
+      <DeleteConfirmModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
+        title="Delete Folder?"
+        description="Are you sure you want to delete this folder? Notes inside will not be deleted."
+      />
     </div>
-  )
+  );
 }
+

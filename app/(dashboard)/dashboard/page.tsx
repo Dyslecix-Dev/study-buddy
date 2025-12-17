@@ -30,7 +30,7 @@ export default async function DashboardPage() {
   // Check if user has any flashcards
   const flashcardCount = await prisma.flashcard.count({
     where: {
-      deck: {
+      Deck: {
         userId: user.id,
       },
     },
@@ -101,8 +101,8 @@ export default async function DashboardPage() {
         <div className="space-y-4">
           {noteCount === 0 && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-blue-900 mb-2">Getting Started</h2>
-              <p className="text-blue-800 mb-3">You've successfully set up your account! Try creating your first note to get started.</p>
+              <h2 className="text-lg font-semibold text-blue-900 mb-2">📝 Start Taking Notes</h2>
+              <p className="text-blue-800 mb-3">Capture your thoughts, ideas, and study materials in one organized place. Create your first note to begin building your knowledge base.</p>
               <Link href="/notes/new" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
                 Create Your First Note
               </Link>
@@ -111,8 +111,8 @@ export default async function DashboardPage() {
 
           {taskCount === 0 && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-green-900 mb-2">Getting Started</h2>
-              <p className="text-green-800 mb-3">You've successfully set up your account! Try creating your first task to get started.</p>
+              <h2 className="text-lg font-semibold text-green-900 mb-2">✅ Stay Organized</h2>
+              <p className="text-green-800 mb-3">Keep track of assignments, projects, and deadlines. Add your first task to start managing your workload effectively.</p>
               <Link href="/tasks" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
                 Create Your First Task
               </Link>
@@ -121,8 +121,8 @@ export default async function DashboardPage() {
 
           {flashcardCount === 0 && (
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-purple-900 mb-2">Getting Started</h2>
-              <p className="text-purple-800 mb-3">You've successfully set up your account! Try creating your first flashcard to get started.</p>
+              <h2 className="text-lg font-semibold text-purple-900 mb-2">🎯 Master Your Studies</h2>
+              <p className="text-purple-800 mb-3">Use spaced repetition to memorize key concepts and facts. Create your first flashcard deck to boost your retention.</p>
               <Link href="/flashcards" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700">
                 Create Your First Flashcard
               </Link>

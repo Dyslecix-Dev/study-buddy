@@ -4,12 +4,20 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
 import Fuse from "fuse.js";
-import { FileText, CheckSquare, Brain, X } from "lucide-react";
+import { FileText, CheckSquare, Brain, X, Folder, Library } from "lucide-react";
+
+interface Folder {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+}
 
 interface Note {
   id: string;
   title: string;
   content: any;
+  folderId: string | null;
 }
 
 interface Task {
@@ -30,10 +38,11 @@ interface Flashcard {
 interface Deck {
   id: string;
   name: string;
-  flashcards: Flashcard[];
+  Flashcard: Flashcard[];
 }
 
 interface SearchData {
+  folders: Folder[];
   notes: Note[];
   tasks: Task[];
   decks: Deck[];
@@ -104,12 +113,20 @@ export default function CommandPalette() {
     };
 
     // Prepare searchable items
+    const folderItems = searchData.folders.map((folder) => ({
+      type: "folder" as const,
+      id: folder.id,
+      title: folder.name,
+      content: folder.description || "",
+      url: `/notes/${folder.id}`,
+    }));
+
     const noteItems = searchData.notes.map((note) => ({
       type: "note" as const,
       id: note.id,
       title: note.title,
       content: extractTextFromContent(note.content),
-      url: `/notes/${note.id}`,
+      url: note.folderId ? `/notes/${note.folderId}/edit/${note.id}` : `/notes/${note.id}`,
     }));
 
     const taskItems = searchData.tasks.map((task) => ({
@@ -119,6 +136,14 @@ export default function CommandPalette() {
       content: task.description || "",
       url: `/tasks`,
       completed: task.completed,
+    }));
+
+    const deckItems = searchData.decks.map((deck) => ({
+      type: "deck" as const,
+      id: deck.id,
+      title: deck.name,
+      content: `${deck.Flashcard.length} cards`,
+      url: `/flashcards/${deck.id}`,
     }));
 
     const flashcardItems: Array<{
@@ -132,7 +157,7 @@ export default function CommandPalette() {
     }> = [];
 
     searchData.decks.forEach((deck) => {
-      deck.flashcards.forEach((card) => {
+      deck.Flashcard.forEach((card) => {
         flashcardItems.push({
           type: "flashcard" as const,
           id: card.id,
@@ -145,7 +170,7 @@ export default function CommandPalette() {
       });
     });
 
-    const allItems = [...noteItems, ...taskItems, ...flashcardItems];
+    const allItems = [...folderItems, ...noteItems, ...taskItems, ...deckItems, ...flashcardItems];
 
     // Fuzzy search with Fuse.js
     const fuse = new Fuse(allItems, {
@@ -177,7 +202,7 @@ export default function CommandPalette() {
             <Command.Input
               value={search}
               onValueChange={setSearch}
-              placeholder="Search notes, tasks, and flashcards..."
+              placeholder="Search folders, notes, tasks, decks, and flashcards..."
               className="flex h-12 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:opacity-50 text-gray-900"
             />
             <button onClick={() => setOpen(false)} className="p-2 hover:bg-gray-100 rounded">
@@ -200,6 +225,11 @@ export default function CommandPalette() {
                     className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer hover:bg-gray-100 aria-selected:bg-gray-100 text-gray-900"
                   >
                     <div className="flex-shrink-0">
+                      {item.type === "folder" && (
+                        <div className="p-2 bg-yellow-100 rounded">
+                          <Folder size={16} className="text-yellow-600" />
+                        </div>
+                      )}
                       {item.type === "note" && (
                         <div className="p-2 bg-blue-100 rounded">
                           <FileText size={16} className="text-blue-600" />
@@ -208,6 +238,11 @@ export default function CommandPalette() {
                       {item.type === "task" && (
                         <div className="p-2 bg-green-100 rounded">
                           <CheckSquare size={16} className="text-green-600" />
+                        </div>
+                      )}
+                      {item.type === "deck" && (
+                        <div className="p-2 bg-indigo-100 rounded">
+                          <Library size={16} className="text-indigo-600" />
                         </div>
                       )}
                       {item.type === "flashcard" && (
@@ -221,8 +256,10 @@ export default function CommandPalette() {
                       <div className="text-xs text-gray-500 truncate">{item.type === "flashcard" && "deckName" in item ? `${item.deckName} • ${contentPreview}` : contentPreview}</div>
                     </div>
                     <div className="text-xs text-gray-400 flex-shrink-0">
+                      {item.type === "folder" && "Folder"}
                       {item.type === "note" && "Note"}
                       {item.type === "task" && "Task"}
+                      {item.type === "deck" && "Deck"}
                       {item.type === "flashcard" && "Flashcard"}
                     </div>
                   </Command.Item>

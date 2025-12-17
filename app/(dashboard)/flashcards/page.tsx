@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Plus, ArrowLeft } from 'lucide-react'
 import DeckList from '@/components/flashcards/deck-list'
 import { toast } from 'sonner'
+import DeleteConfirmModal from '@/components/ui/delete-confirm-modal'
 
 interface Deck {
   id: string
@@ -14,7 +15,7 @@ interface Deck {
   description: string | null
   color: string | null
   _count: {
-    flashcards: number
+    Flashcard: number
   }
   createdAt: Date
   updatedAt: Date
@@ -31,6 +32,7 @@ export default function FlashcardsPage() {
     description: '',
     color: '',
   })
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   useEffect(() => {
     checkAuth()
@@ -75,11 +77,16 @@ export default function FlashcardsPage() {
     }
 
     try {
+      console.log('Creating deck with data:', formData)
       const response = await fetch('/api/decks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
+
+      console.log('Response status:', response.status)
+      const responseData = await response.json()
+      console.log('Response data:', responseData)
 
       if (response.ok) {
         toast.success('Deck created successfully')
@@ -87,7 +94,8 @@ export default function FlashcardsPage() {
         setFormData({ name: '', description: '', color: '' })
         await fetchDecks()
       } else {
-        toast.error('Failed to create deck')
+        console.error('Failed to create deck. Status:', response.status, 'Error:', responseData)
+        toast.error(responseData.error || 'Failed to create deck')
       }
     } catch (error) {
       console.error('Error creating deck:', error)
@@ -101,11 +109,18 @@ export default function FlashcardsPage() {
     if (!editingDeck) return
 
     try {
+      console.log('Updating deck with ID:', editingDeck.id)
+      console.log('Update data:', formData)
+
       const response = await fetch(`/api/decks/${editingDeck.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
+
+      console.log('Response status:', response.status)
+      const responseData = await response.json()
+      console.log('Response data:', responseData)
 
       if (response.ok) {
         toast.success('Deck updated successfully')
@@ -113,7 +128,8 @@ export default function FlashcardsPage() {
         setFormData({ name: '', description: '', color: '' })
         await fetchDecks()
       } else {
-        toast.error('Failed to update deck')
+        console.error('Failed to update deck. Status:', response.status, 'Error:', responseData)
+        toast.error(responseData.error || 'Failed to update deck')
       }
     } catch (error) {
       console.error('Error updating deck:', error)
@@ -122,11 +138,14 @@ export default function FlashcardsPage() {
   }
 
   const handleDeleteDeck = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this deck? All flashcards will be deleted.'))
-      return
+    setDeleteConfirm(id)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return
 
     try {
-      const response = await fetch(`/api/decks/${id}`, {
+      const response = await fetch(`/api/decks/${deleteConfirm}`, {
         method: 'DELETE',
       })
 
@@ -139,6 +158,8 @@ export default function FlashcardsPage() {
     } catch (error) {
       console.error('Error deleting deck:', error)
       toast.error('Failed to delete deck')
+    } finally {
+      setDeleteConfirm(null)
     }
   }
 
@@ -278,6 +299,14 @@ export default function FlashcardsPage() {
 
         <DeckList decks={decks} onEdit={handleEdit} onDelete={handleDeleteDeck} />
       </div>
+
+      <DeleteConfirmModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
+        title="Delete Deck?"
+        description="Are you sure you want to delete this deck? All flashcards will be deleted."
+      />
     </div>
   )
 }

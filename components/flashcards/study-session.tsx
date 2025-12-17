@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import Flashcard from './flashcard'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 interface FlashcardData {
   id: string
@@ -57,6 +58,7 @@ export default function StudySession({ deckId, flashcards }: StudySessionProps) 
       })
     } catch (error) {
       console.error('Error recording review:', error)
+      toast.error('Failed to record review')
     }
 
     // Move to next card

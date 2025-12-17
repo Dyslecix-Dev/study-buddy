@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { title, content } = await request.json()
+    const { title, content, folderId } = await request.json()
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
         title,
         content: content || '<p></p>',
         userId: user.id,
+        folderId: folderId || null,
       },
     })
 

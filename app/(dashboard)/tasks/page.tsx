@@ -121,6 +121,7 @@ export default function TasksPage() {
       })
 
       if (response.ok) {
+        toast.success(completed ? 'Task marked as complete' : 'Task marked as incomplete')
         await fetchTasks()
       } else {
         toast.error('Failed to update task')

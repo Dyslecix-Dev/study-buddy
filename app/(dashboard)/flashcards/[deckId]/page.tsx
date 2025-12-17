@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Plus, Trash2, Edit2, Play } from 'lucide-react'
 import FlashcardForm from '@/components/flashcards/flashcard-form'
 import { toast } from 'sonner'
+import DeleteConfirmModal from '@/components/ui/delete-confirm-modal'
 
 interface Flashcard {
   id: string
@@ -19,7 +20,7 @@ interface Deck {
   id: string
   name: string
   description: string | null
-  flashcards: Flashcard[]
+  Flashcard: Flashcard[]
 }
 
 export default function DeckDetailPage({
@@ -33,6 +34,7 @@ export default function DeckDetailPage({
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   useEffect(() => {
     checkAuth()
@@ -118,10 +120,14 @@ export default function DeckDetailPage({
   }
 
   const handleDeleteFlashcard = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this flashcard?')) return
+    setDeleteConfirm(id)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return
 
     try {
-      const response = await fetch(`/api/decks/${deckId}/flashcards/${id}`, {
+      const response = await fetch(`/api/decks/${deckId}/flashcards/${deleteConfirm}`, {
         method: 'DELETE',
       })
 
@@ -134,6 +140,8 @@ export default function DeckDetailPage({
     } catch (error) {
       console.error('Error deleting flashcard:', error)
       toast.error('Failed to delete flashcard')
+    } finally {
+      setDeleteConfirm(null)
     }
   }
 
@@ -183,10 +191,10 @@ export default function DeckDetailPage({
 
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900">
-            Flashcards ({deck.flashcards.length})
+            Flashcards ({deck.Flashcard.length})
           </h1>
           <div className="flex gap-3">
-            {deck.flashcards.length > 0 && (
+            {deck.Flashcard.length > 0 && (
               <Link
                 href={`/flashcards/${deckId}/study`}
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
@@ -223,7 +231,7 @@ export default function DeckDetailPage({
         )}
 
         {/* Flashcards List */}
-        {deck.flashcards.length === 0 ? (
+        {deck.Flashcard.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
             <p className="text-gray-500 mb-4">No flashcards in this deck yet.</p>
             <button
@@ -235,7 +243,7 @@ export default function DeckDetailPage({
           </div>
         ) : (
           <div className="space-y-3">
-            {deck.flashcards.map((card) => (
+            {deck.Flashcard.map((card) => (
               <div
                 key={card.id}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
@@ -273,6 +281,14 @@ export default function DeckDetailPage({
           </div>
         )}
       </div>
+
+      <DeleteConfirmModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
+        title="Delete Flashcard?"
+        description="Are you sure you want to delete this flashcard? This action cannot be undone."
+      />
     </div>
   )
 }
