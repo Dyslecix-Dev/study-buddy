@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import LogoutButton from '@/components/logout-button'
-import { FileText, CheckSquare, Brain } from 'lucide-react'
+import { FileText, CheckSquare, Brain, Calendar } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -42,7 +42,7 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <Link
             href="/notes"
             className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow"
@@ -85,6 +85,21 @@ export default async function DashboardPage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Flashcards</h3>
             <p className="text-sm text-gray-600">
               Study with flashcard decks and track your progress
+            </p>
+          </Link>
+
+          <Link
+            href="/calendar"
+            className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow"
+          >
+            <div className="flex items-center mb-4">
+              <div className="p-3 bg-orange-100 rounded-lg">
+                <Calendar className="text-orange-600" size={24} />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Calendar</h3>
+            <p className="text-sm text-gray-600">
+              View all your tasks and deadlines in calendar view
             </p>
           </Link>
         </div>
