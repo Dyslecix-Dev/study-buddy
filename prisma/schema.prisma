@@ -5,11 +5,173 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// User model for authentication
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  notes         Note[]
+  tasks         Task[]
+  decks         Deck[]
+  sessions      StudySession[]
+
+  @@index([email])
+}
+
+// Note model for rich text notes
+model Note {
+  id            String   @id @default(cuid())
+  title         String
+  content       Json     // Tiptap JSON format
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folderId      String?
+  folder        Folder?  @relation(fields: [folderId], references: [id])
+  tags          Tag[]
+  linkedNotes   NoteLink[] @relation("NoteFrom")
+  linkedBy      NoteLink[] @relation("NoteTo")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([folderId])
+}
+
+// Folder organization for notes
+model Folder {
+  id            String   @id @default(cuid())
+  name          String
+  color         String?
+  notes         Note[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Note linking (wiki-style)
+model NoteLink {
+  id            String   @id @default(cuid())
+  fromNoteId    String
+  toNoteId      String
+  fromNote      Note     @relation("NoteFrom", fields: [fromNoteId], references: [id], onDelete: Cascade)
+  toNote        Note     @relation("NoteTo", fields: [toNoteId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([fromNoteId, toNoteId])
+  @@index([fromNoteId])
+  @@index([toNoteId])
+}
+
+// Task management
+model Task {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  completed     Boolean  @default(false)
+  dueDate       DateTime?
+  priority      Int      @default(0) // 0=Low, 1=Medium, 2=High
+  order         Int      @default(0) // For drag-drop ordering
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tags          Tag[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, dueDate])
+  @@index([userId, completed])
+}
+
+// Flashcard deck
+model Deck {
+  id            String      @id @default(cuid())
+  name          String
+  description   String?
+  color         String?
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flashcards    Flashcard[]
+  tags          Tag[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([userId])
+}
+
+// Flashcard with spaced repetition data
+model Flashcard {
+  id            String   @id @default(cuid())
+  front         String
+  back          String
+  deckId        String
+  deck          Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  // Spaced repetition (SM-2 algorithm)
+  easeFactor    Float    @default(2.5)
+  interval      Int      @default(0)  // Days until next review
+  repetitions   Int      @default(0)
+  nextReview    DateTime?
+  lastReviewed  DateTime?
+
+  reviews       Review[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([deckId])
+  @@index([nextReview])
+}
+
+// Review history for flashcards
+model Review {
+  id            String     @id @default(cuid())
+  flashcardId   String
+  flashcard     Flashcard  @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+  quality       Int        // 0-5 rating
+  createdAt     DateTime   @default(now())
+
+  @@index([flashcardId])
+  @@index([createdAt])
+}
+
+// Study sessions (Pomodoro tracking)
+model StudySession {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  duration      Int      // Minutes
+  type          String   // 'pomodoro', 'flashcard', 'note'
+  completed     Boolean  @default(false)
+  startedAt     DateTime @default(now())
+  endedAt       DateTime?
+
+  @@index([userId])
+  @@index([userId, startedAt])
+}
+
+// Tags for organization
+model Tag {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  color         String?
+  notes         Note[]
+  tasks         Task[]
+  decks         Deck[]
+  createdAt     DateTime @default(now())
+
+  @@index([name])
 }
