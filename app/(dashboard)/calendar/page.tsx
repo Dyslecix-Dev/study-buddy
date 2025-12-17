@@ -1,98 +1,99 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft } from 'lucide-react'
-import CalendarView from '@/components/calendar/calendar-view'
-import EventDetail from '@/components/calendar/event-detail'
-import { toast } from 'sonner'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { ArrowLeft } from "lucide-react";
+import CalendarView from "@/components/calendar/calendar-view";
+import EventDetail from "@/components/calendar/event-detail";
+import { toast } from "sonner";
 
 interface Task {
-  id: string
-  title: string
-  description: string | null
-  completed: boolean
-  dueDate: Date | null
-  priority: number
+  id: string;
+  title: string;
+  description: string | null;
+  completed: boolean;
+  dueDate: Date | null;
+  priority: number;
+  order: number;
 }
 
 export default function CalendarPage() {
-  const router = useRouter()
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const router = useRouter();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   useEffect(() => {
-    checkAuth()
-  }, [])
+    checkAuth();
+  }, []);
 
   useEffect(() => {
-    fetchTasks()
-  }, [])
+    fetchTasks();
+  }, []);
 
   const checkAuth = async () => {
-    const supabase = createClient()
+    const supabase = createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      router.push('/login')
+      router.push("/login");
     }
-  }
+  };
 
   const fetchTasks = async () => {
     try {
-      const response = await fetch('/api/tasks')
+      const response = await fetch("/api/tasks");
       if (response.ok) {
-        const data = await response.json()
-        setTasks(data)
+        const data = await response.json();
+        setTasks(data);
       }
     } catch (error) {
-      console.error('Error fetching tasks:', error)
-      toast.error('Failed to load tasks')
+      console.error("Error fetching tasks:", error);
+      toast.error("Failed to load tasks");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleToggleComplete = async (id: string, completed: boolean) => {
     try {
       const response = await fetch(`/api/tasks/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ completed }),
-      })
+      });
 
       if (response.ok) {
-        toast.success(completed ? 'Task marked as complete' : 'Task marked as incomplete')
-        await fetchTasks()
-        setSelectedTask(null)
+        toast.success(completed ? "Task marked as complete" : "Task marked as incomplete");
+        await fetchTasks();
+        setSelectedTask(null);
       } else {
-        toast.error('Failed to update task')
+        toast.error("Failed to update task");
       }
     } catch (error) {
-      console.error('Error toggling task:', error)
-      toast.error('Failed to update task')
+      console.error("Error toggling task:", error);
+      toast.error("Failed to update task");
     }
-  }
+  };
 
   const handleSelectEvent = (task: Task) => {
-    setSelectedTask(task)
-  }
+    setSelectedTask(task);
+  };
 
   const handleCloseDetail = () => {
-    setSelectedTask(null)
-  }
+    setSelectedTask(null);
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <p className="text-gray-600">Loading calendar...</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -111,9 +112,7 @@ export default function CalendarPage() {
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Task Calendar</h1>
-          <p className="text-gray-600">
-            View all your tasks with due dates. Click on an event to see details.
-          </p>
+          <p className="text-gray-600">View all your tasks with due dates. Click on an event to see details.</p>
         </div>
 
         {/* Legend */}
@@ -143,10 +142,7 @@ export default function CalendarPage() {
         {tasks.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <p className="text-gray-500 mb-4">No tasks with due dates found.</p>
-            <Link
-              href="/tasks"
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
+            <Link href="/tasks" className="text-blue-600 hover:text-blue-700 font-medium">
               Create a task with a due date
             </Link>
           </div>
@@ -156,13 +152,8 @@ export default function CalendarPage() {
       </div>
 
       {/* Event Detail Modal */}
-      {selectedTask && (
-        <EventDetail
-          task={selectedTask}
-          onClose={handleCloseDetail}
-          onToggleComplete={handleToggleComplete}
-        />
-      )}
+      {selectedTask && <EventDetail task={selectedTask} onClose={handleCloseDetail} onToggleComplete={handleToggleComplete} />}
     </div>
-  )
+  );
 }
+

@@ -46,7 +46,6 @@ export async function POST(request: NextRequest, { params }: Params) {
       data: {
         flashcardId: flashcardId,
         quality: rating,
-        reviewedAt: new Date(),
       },
     })
 

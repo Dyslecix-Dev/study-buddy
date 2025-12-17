@@ -584,26 +584,24 @@ export function CommandPalette() {
 
 ### Phase 1 Deliverables Checklist
 
-- [ ] User signup/login with Better Auth
-- [ ] Google OAuth integration
-- [ ] Profile page with avatar
-- [ ] Rich text note editor (Tiptap)
-- [ ] Note auto-save
+- [x] User signup/login with Supabase Auth
+- [x] Rich text note editor (Tiptap)
+- [x] Note auto-save
 - [ ] Note list and folders
-- [ ] Create/edit/delete tasks
-- [ ] Task due dates and priorities
-- [ ] Drag-and-drop task ordering
-- [ ] Create flashcard decks
-- [ ] Add flashcards to decks
-- [ ] Study mode with flip animation
-- [ ] Calendar view of deadlines
+- [x] Create/edit/delete tasks
+- [x] Task due dates and priorities
+- [x] Drag-and-drop task ordering
+- [x] Create flashcard decks
+- [x] Add flashcards to decks
+- [x] Study mode with flip animation
+- [x] Calendar view of deadlines
 - [ ] Global search (Cmd+K)
-- [ ] Responsive design (mobile-friendly)
+- [x] Responsive design (mobile-friendly)
 - [ ] Dark mode toggle
 - [ ] Basic error handling
 - [ ] Loading states
 - [ ] Toast notifications (sonner)
-- [ ] Deploy to Vercel
+- [x] Deploy to Vercel
 - [ ] Setup Sentry error tracking
 - [ ] Add Google Analytics
 
