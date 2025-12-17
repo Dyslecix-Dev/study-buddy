@@ -58,7 +58,10 @@ export default async function DashboardPage() {
             </p>
           </Link>
 
-          <div className="bg-white shadow rounded-lg p-6 opacity-50 cursor-not-allowed">
+          <Link
+            href="/tasks"
+            className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow"
+          >
             <div className="flex items-center mb-4">
               <div className="p-3 bg-green-100 rounded-lg">
                 <CheckSquare className="text-green-600" size={24} />
@@ -66,9 +69,9 @@ export default async function DashboardPage() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Tasks</h3>
             <p className="text-sm text-gray-600">
-              Coming soon: Manage your assignments and deadlines
+              Manage your assignments and deadlines with priorities
             </p>
-          </div>
+          </Link>
 
           <div className="bg-white shadow rounded-lg p-6 opacity-50 cursor-not-allowed">
             <div className="flex items-center mb-4">
