@@ -73,7 +73,10 @@ export default async function DashboardPage() {
             </p>
           </Link>
 
-          <div className="bg-white shadow rounded-lg p-6 opacity-50 cursor-not-allowed">
+          <Link
+            href="/flashcards"
+            className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow"
+          >
             <div className="flex items-center mb-4">
               <div className="p-3 bg-purple-100 rounded-lg">
                 <Brain className="text-purple-600" size={24} />
@@ -81,9 +84,9 @@ export default async function DashboardPage() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Flashcards</h3>
             <p className="text-sm text-gray-600">
-              Coming soon: Study with spaced repetition flashcards
+              Study with flashcard decks and track your progress
             </p>
-          </div>
+          </Link>
         </div>
 
         {noteCount === 0 && (

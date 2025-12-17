@@ -1,0 +1,134 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
+
+type Params = {
+  params: Promise<{
+    deckId: string
+  }>
+}
+
+// GET /api/decks/[deckId] - Get a specific deck with flashcards
+export async function GET(_request: NextRequest, { params }: Params) {
+  try {
+    const { deckId } = await params
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const deck = await prisma.deck.findFirst({
+      where: {
+        id: deckId,
+        userId: user.id,
+      },
+      include: {
+        flashcards: {
+          orderBy: { createdAt: 'asc' },
+        },
+        _count: {
+          select: { flashcards: true },
+        },
+      },
+    })
+
+    if (!deck) {
+      return NextResponse.json({ error: 'Deck not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(deck)
+  } catch (error) {
+    console.error('Error fetching deck:', error)
+    return NextResponse.json({ error: 'Failed to fetch deck' }, { status: 500 })
+  }
+}
+
+// PATCH /api/decks/[deckId] - Update a deck
+export async function PATCH(request: NextRequest, { params }: Params) {
+  try {
+    const { deckId } = await params
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { name, description, color } = body
+
+    // Verify the deck belongs to the user
+    const existingDeck = await prisma.deck.findFirst({
+      where: {
+        id: deckId,
+        userId: user.id,
+      },
+    })
+
+    if (!existingDeck) {
+      return NextResponse.json({ error: 'Deck not found' }, { status: 404 })
+    }
+
+    const updateData: any = {}
+    if (name !== undefined) updateData.name = name
+    if (description !== undefined) updateData.description = description
+    if (color !== undefined) updateData.color = color
+
+    const deck = await prisma.deck.update({
+      where: { id: deckId },
+      data: updateData,
+      include: {
+        _count: {
+          select: { flashcards: true },
+        },
+      },
+    })
+
+    return NextResponse.json(deck)
+  } catch (error) {
+    console.error('Error updating deck:', error)
+    return NextResponse.json({ error: 'Failed to update deck' }, { status: 500 })
+  }
+}
+
+// DELETE /api/decks/[deckId] - Delete a deck
+export async function DELETE(_request: NextRequest, { params }: Params) {
+  try {
+    const { deckId } = await params
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Verify the deck belongs to the user
+    const existingDeck = await prisma.deck.findFirst({
+      where: {
+        id: deckId,
+        userId: user.id,
+      },
+    })
+
+    if (!existingDeck) {
+      return NextResponse.json({ error: 'Deck not found' }, { status: 404 })
+    }
+
+    await prisma.deck.delete({
+      where: { id: deckId },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting deck:', error)
+    return NextResponse.json({ error: 'Failed to delete deck' }, { status: 500 })
+  }
+}
