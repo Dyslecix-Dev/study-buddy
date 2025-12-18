@@ -116,10 +116,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Params 
       return NextResponse.json({ error: "Folder not found" }, { status: 404 });
     }
 
-    // Set all notes in this folder to have no folder (folderId = null)
-    await prisma.note.updateMany({
+    // Delete all notes in this folder
+    await prisma.note.deleteMany({
       where: { folderId: folderId },
-      data: { folderId: null },
     });
 
     // Delete the folder
