@@ -205,7 +205,7 @@ export default function CommandPalette() {
               placeholder="Search folders, notes, tasks, decks, and flashcards..."
               className="flex h-12 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:opacity-50 text-gray-900"
             />
-            <button onClick={() => setOpen(false)} className="p-2 hover:bg-gray-100 rounded">
+            <button onClick={() => setOpen(false)} className="p-2 hover:bg-gray-100 transition-colors duration-300 rounded cursor-pointer">
               <X size={18} className="text-gray-500" />
             </button>
           </div>
@@ -222,7 +222,7 @@ export default function CommandPalette() {
                     key={`${item.type}-${item.id}`}
                     value={`${item.title} ${item.content}`}
                     onSelect={() => handleSelect(item.url)}
-                    className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer hover:bg-gray-100 aria-selected:bg-gray-100 text-gray-900"
+                    className="flex items-center gap-3 px-3 py-2 rounded cursor-pointer hover:bg-gray-100 transition-colors duration-300 aria-selected:bg-gray-100 text-gray-900"
                   >
                     <div className="flex-shrink-0">
                       {item.type === "folder" && (

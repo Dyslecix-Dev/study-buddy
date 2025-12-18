@@ -1,17 +1,17 @@
-import Link from 'next/link'
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function Home() {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
   // If user is logged in, redirect to dashboard
   if (user) {
-    redirect('/dashboard')
+    redirect("/dashboard");
   }
 
   return (
@@ -27,13 +27,13 @@ export default async function Home() {
           <div className="mt-10 flex justify-center gap-4">
             <Link
               href="/signup"
-              className="px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10"
+              className="px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300 md:py-4 md:text-lg md:px-10"
             >
               Get Started
             </Link>
             <Link
               href="/login"
-              className="px-8 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10"
+              className="px-8 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-300 md:py-4 md:text-lg md:px-10"
             >
               Sign In
             </Link>
@@ -44,52 +44,41 @@ export default async function Home() {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="text-blue-600 text-3xl mb-4">📝</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Rich Text Notes</h3>
-            <p className="text-gray-600">
-              Create beautiful notes with formatting, images, and wiki-style linking
-            </p>
+            <p className="text-gray-600">Create beautiful notes with formatting, images, and wiki-style linking</p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="text-blue-600 text-3xl mb-4">✅</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Task Management</h3>
-            <p className="text-gray-600">
-              Keep track of assignments, deadlines, and priorities in one place
-            </p>
+            <p className="text-gray-600">Keep track of assignments, deadlines, and priorities in one place</p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="text-blue-600 text-3xl mb-4">🎴</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Smart Flashcards</h3>
-            <p className="text-gray-600">
-              Study smarter with spaced repetition and AI-generated flashcards
-            </p>
+            <p className="text-gray-600">Study smarter with spaced repetition and AI-generated flashcards</p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="text-blue-600 text-3xl mb-4">⏱️</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Pomodoro Timer</h3>
-            <p className="text-gray-600">
-              Stay focused with built-in Pomodoro sessions and time tracking
-            </p>
+            <p className="text-gray-600">Stay focused with built-in Pomodoro sessions and time tracking</p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="text-blue-600 text-3xl mb-4">📊</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Progress Tracking</h3>
-            <p className="text-gray-600">
-              Visualize your study habits with detailed analytics and streaks
-            </p>
+            <p className="text-gray-600">Visualize your study habits with detailed analytics and streaks</p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="text-blue-600 text-3xl mb-4">🤖</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">AI-Powered</h3>
-            <p className="text-gray-600">
-              Generate quizzes and flashcards automatically from your notes
-            </p>
+            <p className="text-gray-600">Generate quizzes and flashcards automatically from your notes</p>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
+

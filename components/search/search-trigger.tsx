@@ -22,7 +22,7 @@ export default function SearchTrigger() {
   };
 
   return (
-    <button onClick={handleClick} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors cursor-pointer">
+    <button onClick={handleClick} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-300 cursor-pointer">
       <Search size={18} />
       <span>Search</span>
       <kbd className="hidden sm:inline-block px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded">{isMac ? "⌘" : "Ctrl"}K</kbd>

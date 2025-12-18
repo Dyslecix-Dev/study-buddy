@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import FolderList from "@/components/folders/folder-list";
-import { Plus, ArrowLeft, Folder } from "lucide-react";
+import DashboardNav from "@/components/dashboard-nav";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 
@@ -143,36 +143,32 @@ export default function NotesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading folders...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
+        <p style={{ color: "var(--text-secondary)" }}>Loading folders...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 mr-4">
-              <ArrowLeft size={20} />
-            </Link>
-            <h2 className="text-xl font-semibold text-gray-900">Notes</h2>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+      <DashboardNav />
 
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Folders</h1>
-            <p className="mt-2 text-sm text-gray-600">
+            <h1 className="text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
+              My Folders
+            </h1>
+            <p className="mt-2 text-sm" style={{ color: "var(--text-secondary)" }}>
               {folders.length} {folders.length === 1 ? "folder" : "folders"}
             </p>
           </div>
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-black focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 cursor-pointer"
+            style={{ backgroundColor: "var(--primary)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
             <Plus className="mr-2" size={18} />
             New Folder
@@ -181,11 +177,13 @@ export default function NotesPage() {
 
         {/* Create/Edit Form */}
         {showCreateForm && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">{editingFolder ? "Edit Folder" : "Create New Folder"}</h2>
+          <div className="rounded-lg shadow p-6 mb-8" style={{ backgroundColor: "var(--surface)" }}>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: "var(--text-primary)" }}>
+              {editingFolder ? "Edit Folder" : "Create New Folder"}
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="name" className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
                   Folder Name *
                 </label>
                 <input
@@ -193,35 +191,53 @@ export default function NotesPage() {
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: "var(--background)",
+                    borderColor: "var(--border)",
+                    color: "var(--text-primary)",
+                    borderWidth: "1px",
+                  }}
                   placeholder="Enter folder name"
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="description" className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
                   Description (optional)
                 </label>
                 <textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: "var(--background)",
+                    borderColor: "var(--border)",
+                    color: "var(--text-primary)",
+                    borderWidth: "1px",
+                  }}
                   placeholder="Enter folder description"
                   rows={3}
                 />
               </div>
 
               <div>
-                <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="color" className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
                   Color
                 </label>
                 <select
                   id="color"
                   value={formData.color}
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="w-full px-3 py-2 text-black border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: "var(--background)",
+                    borderColor: "var(--border)",
+                    color: "var(--text-primary)",
+                    borderWidth: "1px",
+                  }}
                 >
                   <option value="">Default</option>
                   <option value="blue">Blue</option>
@@ -236,14 +252,25 @@ export default function NotesPage() {
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="flex-1 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 cursor-pointer"
+                  style={{ backgroundColor: "var(--primary)" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                 >
                   {editingFolder ? "Update Folder" : "Create Folder"}
                 </button>
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="px-4 py-2 rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-300 cursor-pointer"
+                  style={{
+                    borderColor: "var(--border)",
+                    color: "var(--text-secondary)",
+                    backgroundColor: "var(--surface)",
+                    borderWidth: "1px",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-hover)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface)")}
                 >
                   Cancel
                 </button>

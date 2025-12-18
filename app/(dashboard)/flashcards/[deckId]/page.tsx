@@ -1,203 +1,213 @@
-'use client'
+"use client";
 
-import { useState, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, Plus, Trash2, Edit2, Play } from 'lucide-react'
-import FlashcardForm from '@/components/flashcards/flashcard-form'
-import { toast } from 'sonner'
-import DeleteConfirmModal from '@/components/ui/delete-confirm-modal'
+import { useState, useEffect, use } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import DashboardNav from "@/components/dashboard-nav";
+import { Plus, Trash2, Edit2, Play } from "lucide-react";
+import FlashcardForm from "@/components/flashcards/flashcard-form";
+import { toast } from "sonner";
+import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 
 interface Flashcard {
-  id: string
-  front: string
-  back: string
-  createdAt: Date
+  id: string;
+  front: string;
+  back: string;
+  createdAt: Date;
 }
 
 interface Deck {
-  id: string
-  name: string
-  description: string | null
-  Flashcard: Flashcard[]
+  id: string;
+  name: string;
+  description: string | null;
+  Flashcard: Flashcard[];
 }
 
-export default function DeckDetailPage({
-  params,
-}: {
-  params: Promise<{ deckId: string }>
-}) {
-  const { deckId } = use(params)
-  const router = useRouter()
-  const [deck, setDeck] = useState<Deck | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editingCard, setEditingCard] = useState<Flashcard | null>(null)
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+export default function DeckDetailPage({ params }: { params: Promise<{ deckId: string }> }) {
+  const { deckId } = use(params);
+  const router = useRouter();
+  const [deck, setDeck] = useState<Deck | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
-    checkAuth()
-  }, [])
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     if (deckId) {
-      fetchDeck()
+      fetchDeck();
     }
-  }, [deckId])
+  }, [deckId]);
 
   const checkAuth = async () => {
-    const supabase = createClient()
+    const supabase = createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      router.push('/login')
+      router.push("/login");
     }
-  }
+  };
 
   const fetchDeck = async () => {
     try {
-      const response = await fetch(`/api/decks/${deckId}`)
+      const response = await fetch(`/api/decks/${deckId}`);
       if (response.ok) {
-        const data = await response.json()
-        setDeck(data)
+        const data = await response.json();
+        setDeck(data);
       } else {
-        toast.error('Failed to load deck')
-        router.push('/flashcards')
+        toast.error("Failed to load deck");
+        router.push("/flashcards");
       }
     } catch (error) {
-      console.error('Error fetching deck:', error)
-      toast.error('Failed to load deck')
+      console.error("Error fetching deck:", error);
+      toast.error("Failed to load deck");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleCreateFlashcard = async (data: { front: string; back: string }) => {
     try {
       const response = await fetch(`/api/decks/${deckId}/flashcards`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      })
+      });
 
       if (response.ok) {
-        toast.success('Flashcard created successfully')
-        setShowForm(false)
-        await fetchDeck()
+        toast.success("Flashcard created successfully");
+        setShowForm(false);
+        await fetchDeck();
       } else {
-        toast.error('Failed to create flashcard')
+        toast.error("Failed to create flashcard");
       }
     } catch (error) {
-      console.error('Error creating flashcard:', error)
-      toast.error('Failed to create flashcard')
+      console.error("Error creating flashcard:", error);
+      toast.error("Failed to create flashcard");
     }
-  }
+  };
 
   const handleUpdateFlashcard = async (data: { front: string; back: string }) => {
-    if (!editingCard) return
+    if (!editingCard) return;
 
     try {
       const response = await fetch(`/api/decks/${deckId}/flashcards/${editingCard.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      })
+      });
 
       if (response.ok) {
-        toast.success('Flashcard updated successfully')
-        setEditingCard(null)
-        await fetchDeck()
+        toast.success("Flashcard updated successfully");
+        setEditingCard(null);
+        await fetchDeck();
       } else {
-        toast.error('Failed to update flashcard')
+        toast.error("Failed to update flashcard");
       }
     } catch (error) {
-      console.error('Error updating flashcard:', error)
-      toast.error('Failed to update flashcard')
+      console.error("Error updating flashcard:", error);
+      toast.error("Failed to update flashcard");
     }
-  }
+  };
 
   const handleDeleteFlashcard = async (id: string) => {
-    setDeleteConfirm(id)
-  }
+    setDeleteConfirm(id);
+  };
 
   const confirmDelete = async () => {
-    if (!deleteConfirm) return
+    if (!deleteConfirm) return;
 
     try {
       const response = await fetch(`/api/decks/${deckId}/flashcards/${deleteConfirm}`, {
-        method: 'DELETE',
-      })
+        method: "DELETE",
+      });
 
       if (response.ok) {
-        toast.success('Flashcard deleted successfully')
-        await fetchDeck()
+        toast.success("Flashcard deleted successfully");
+        await fetchDeck();
       } else {
-        toast.error('Failed to delete flashcard')
+        toast.error("Failed to delete flashcard");
       }
     } catch (error) {
-      console.error('Error deleting flashcard:', error)
-      toast.error('Failed to delete flashcard')
+      console.error("Error deleting flashcard:", error);
+      toast.error("Failed to delete flashcard");
     } finally {
-      setDeleteConfirm(null)
+      setDeleteConfirm(null);
     }
-  }
+  };
 
   const handleEdit = (card: Flashcard) => {
-    setEditingCard(card)
-    setShowForm(false)
-  }
+    setEditingCard(card);
+    setShowForm(false);
+  };
 
   const handleCancelForm = () => {
-    setShowForm(false)
-    setEditingCard(null)
-  }
+    setShowForm(false);
+    setEditingCard(null);
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading deck...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
+        <p style={{ color: "var(--text-secondary)" }}>Loading deck...</p>
       </div>
-    )
+    );
   }
 
   if (!deck) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Deck not found</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
+        <p style={{ color: "var(--text-secondary)" }}>Deck not found</p>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <Link href="/flashcards" className="text-gray-600 hover:text-gray-900 mr-4">
-              <ArrowLeft size={20} />
-            </Link>
-            <h2 className="text-xl font-semibold text-gray-900">{deck.name}</h2>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+      <DashboardNav />
 
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {deck.description && (
-          <p className="text-gray-600 mb-6">{deck.description}</p>
-        )}
+        <div className="mb-6">
+          <Link
+            href="/flashcards"
+            className="text-sm transition-colors duration-300"
+            style={{ color: "var(--text-secondary)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-secondary)")}
+          >
+            ← Back to Decks
+          </Link>
+        </div>
+
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+            {deck.name}
+          </h2>
+          {deck.description && (
+            <p className="mt-2" style={{ color: "var(--text-secondary)" }}>
+              {deck.description}
+            </p>
+          )}
+        </div>
 
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
             Flashcards ({deck.Flashcard.length})
           </h1>
           <div className="flex gap-3">
             {deck.Flashcard.length > 0 && (
               <Link
                 href={`/flashcards/${deckId}/study`}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-white rounded-md transition-all duration-300"
+                style={{ backgroundColor: "var(--secondary)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
               >
                 <Play size={18} />
                 Study Now
@@ -205,10 +215,13 @@ export default function DeckDetailPage({
             )}
             <button
               onClick={() => {
-                setEditingCard(null)
-                setShowForm(true)
+                setEditingCard(null);
+                setShowForm(true);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-black rounded-md transition-all duration-300 cursor-pointer"
+              style={{ backgroundColor: "var(--primary)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
             >
               <Plus size={18} />
               Add Card
@@ -221,22 +234,23 @@ export default function DeckDetailPage({
           <FlashcardForm
             onSubmit={editingCard ? handleUpdateFlashcard : handleCreateFlashcard}
             onCancel={handleCancelForm}
-            initialData={
-              editingCard
-                ? { front: editingCard.front, back: editingCard.back }
-                : undefined
-            }
+            initialData={editingCard ? { front: editingCard.front, back: editingCard.back } : undefined}
             isEdit={!!editingCard}
           />
         )}
 
         {/* Flashcards List */}
         {deck.Flashcard.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <p className="text-gray-500 mb-4">No flashcards in this deck yet.</p>
+          <div className="text-center py-12 rounded-lg shadow" style={{ backgroundColor: "var(--surface)" }}>
+            <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
+              No flashcards in this deck yet.
+            </p>
             <button
               onClick={() => setShowForm(true)}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="font-medium transition-all duration-300 cursor-pointer"
+              style={{ color: "var(--primary)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
             >
               Create your first flashcard
             </button>
@@ -246,30 +260,41 @@ export default function DeckDetailPage({
             {deck.Flashcard.map((card) => (
               <div
                 key={card.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                className="rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow duration-300"
+                style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderWidth: "1px" }}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="mb-3">
-                      <p className="text-xs text-gray-500 mb-1 uppercase">Front</p>
-                      <p className="text-gray-900">{card.front}</p>
+                      <p className="text-xs mb-1 uppercase" style={{ color: "var(--text-muted)" }}>
+                        Front
+                      </p>
+                      <p style={{ color: "var(--text-primary)" }}>{card.front}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 mb-1 uppercase">Back</p>
-                      <p className="text-gray-900">{card.back}</p>
+                      <p className="text-xs mb-1 uppercase" style={{ color: "var(--text-muted)" }}>
+                        Back
+                      </p>
+                      <p style={{ color: "var(--text-primary)" }}>{card.back}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleEdit(card)}
-                      className="text-gray-400 hover:text-blue-600 transition-colors"
+                      className="transition-colors duration-300 cursor-pointer"
+                      style={{ color: "var(--text-muted)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "var(--primary)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
                       title="Edit flashcard"
                     >
                       <Edit2 size={16} />
                     </button>
                     <button
                       onClick={() => handleDeleteFlashcard(card.id)}
-                      className="text-gray-400 hover:text-red-600 transition-colors"
+                      className="transition-colors duration-300 cursor-pointer"
+                      style={{ color: "var(--text-muted)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#dc2626")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
                       title="Delete flashcard"
                     >
                       <Trash2 size={16} />
@@ -290,5 +315,6 @@ export default function DeckDetailPage({
         description="Are you sure you want to delete this flashcard? This action cannot be undone."
       />
     </div>
-  )
+  );
 }
+

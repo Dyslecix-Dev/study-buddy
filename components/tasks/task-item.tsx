@@ -73,7 +73,7 @@ export default function TaskItem({ task, onToggleComplete, onDelete, onEdit, dra
 
   return (
     <div
-      className={`bg-white border-l-4 ${priorityColors[task.priority as keyof typeof priorityColors]} rounded-lg shadow-sm p-4 mb-3 hover:shadow-md transition-shadow ${
+      className={`bg-white border-l-4 ${priorityColors[task.priority as keyof typeof priorityColors]} rounded-lg shadow-sm p-4 mb-3 hover:shadow-md transition-shadow duration-300 ${
         task.completed ? "opacity-60" : ""
       }`}
     >
@@ -92,10 +92,15 @@ export default function TaskItem({ task, onToggleComplete, onDelete, onEdit, dra
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={() => onEdit(task)} className="text-gray-400 hover:text-blue-600 transition-colors" title="Edit task">
+              <button onClick={() => onEdit(task)} className="text-gray-400 hover:text-blue-600 transition-colors duration-300 cursor-pointer" title="Edit task">
                 <Edit2 size={16} />
               </button>
-              <button onClick={handleDeleteClick} disabled={deleteLoading} className="text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50" title="Delete task">
+              <button
+                onClick={handleDeleteClick}
+                disabled={deleteLoading}
+                className="text-gray-400 hover:text-red-600 transition-colors duration-300 disabled:opacity-50 cursor-pointer"
+                title="Delete task"
+              >
                 <Trash2 size={16} />
               </button>
             </div>

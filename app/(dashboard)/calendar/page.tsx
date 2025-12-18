@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft } from "lucide-react";
+import DashboardNav from "@/components/dashboard-nav";
 import CalendarView from "@/components/calendar/calendar-view";
 import EventDetail from "@/components/calendar/event-detail";
 import { toast } from "sonner";
@@ -90,59 +90,70 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading calendar...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
+        <p style={{ color: "var(--text-secondary)" }}>Loading calendar...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 mr-4">
-              <ArrowLeft size={20} />
-            </Link>
-            <h2 className="text-xl font-semibold text-gray-900">Calendar</h2>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+      <DashboardNav />
 
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Task Calendar</h1>
-          <p className="text-gray-600">View all your tasks with due dates. Click on an event to see details.</p>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
+            Task Calendar
+          </h1>
+          <p style={{ color: "var(--text-secondary)" }}>View all your tasks with due dates. Click on an event to see details.</p>
         </div>
 
         {/* Legend */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Priority Colors</h3>
+        <div className="rounded-lg shadow p-4 mb-6" style={{ backgroundColor: "var(--surface)" }}>
+          <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--text-primary)" }}>
+            Priority Colors
+          </h3>
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-red-500"></div>
-              <span className="text-sm text-gray-700">High Priority</span>
+              <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                High Priority
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-yellow-500"></div>
-              <span className="text-sm text-gray-700">Medium Priority</span>
+              <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                Medium Priority
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-gray-500"></div>
-              <span className="text-sm text-gray-700">Low Priority</span>
+              <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                Low Priority
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-gray-400 opacity-50"></div>
-              <span className="text-sm text-gray-700">Completed</span>
+              <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                Completed
+              </span>
             </div>
           </div>
         </div>
 
         {/* Calendar */}
         {tasks.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <p className="text-gray-500 mb-4">No tasks with due dates found.</p>
-            <Link href="/tasks" className="text-blue-600 hover:text-blue-700 font-medium">
+          <div className="rounded-lg shadow p-12 text-center" style={{ backgroundColor: "var(--surface)" }}>
+            <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
+              No tasks with due dates found.
+            </p>
+            <Link
+              href="/tasks"
+              className="font-medium transition-all duration-300"
+              style={{ color: "var(--primary)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
               Create a task with a due date
             </Link>
           </div>

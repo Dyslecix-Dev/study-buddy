@@ -1,158 +1,156 @@
-'use client'
+"use client";
 
-import { useState, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import Editor from '@/components/editor/editor'
-import { ArrowLeft, Trash2, Check } from 'lucide-react'
-import DeleteConfirmModal from '@/components/ui/delete-confirm-modal'
-import { toast } from 'sonner'
+import { useState, useEffect, use } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Editor from "@/components/editor/editor";
+import DashboardNav from "@/components/dashboard-nav";
+import { Trash2, Check } from "lucide-react";
+import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
+import { toast } from "sonner";
 
 export default function NoteEditorPage({ params }: { params: Promise<{ folderId: string; noteId: string }> }) {
-  const { folderId, noteId } = use(params)
-  const router = useRouter()
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('<p></p>')
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(true)
-  const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const { folderId, noteId } = use(params);
+  const router = useRouter();
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("<p></p>");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   // Fetch note on mount
   useEffect(() => {
     const fetchNote = async () => {
       try {
-        const response = await fetch(`/api/notes/${noteId}`)
+        const response = await fetch(`/api/notes/${noteId}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch note')
+          throw new Error("Failed to fetch note");
         }
-        const { note } = await response.json()
-        setTitle(note.title)
-        setContent(note.content)
+        const { note } = await response.json();
+        setTitle(note.title);
+        setContent(note.content);
       } catch (err: any) {
-        toast.error(err.message || 'Failed to load note')
+        toast.error(err.message || "Failed to load note");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchNote()
-  }, [noteId])
+    fetchNote();
+  }, [noteId]);
 
   // Auto-save with debounce
   useEffect(() => {
-    if (loading || saved) return
+    if (loading || saved) return;
 
     const timeoutId = setTimeout(async () => {
-      setSaving(true)
+      setSaving(true);
       try {
         const response = await fetch(`/api/notes/${noteId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ title, content }),
-        })
+        });
 
         if (!response.ok) {
-          throw new Error('Failed to save note')
+          throw new Error("Failed to save note");
         }
 
-        setSaved(true)
+        setSaved(true);
       } catch (err: any) {
-        toast.error(err.message || 'Failed to auto-save')
+        toast.error(err.message || "Failed to auto-save");
       } finally {
-        setSaving(false)
+        setSaving(false);
       }
-    }, 2000) // Auto-save after 2 seconds of no changes
+    }, 2000); // Auto-save after 2 seconds of no changes
 
-    return () => clearTimeout(timeoutId)
-  }, [title, content, noteId, loading, saved])
+    return () => clearTimeout(timeoutId);
+  }, [title, content, noteId, loading, saved]);
 
   const handleTitleChange = (newTitle: string) => {
-    setTitle(newTitle)
-    setSaved(false)
-  }
+    setTitle(newTitle);
+    setSaved(false);
+  };
 
   const handleContentChange = (newContent: string) => {
-    setContent(newContent)
-    setSaved(false)
-  }
+    setContent(newContent);
+    setSaved(false);
+  };
 
   const handleDelete = async () => {
     try {
       const response = await fetch(`/api/notes/${noteId}`, {
-        method: 'DELETE',
-      })
+        method: "DELETE",
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to delete note')
+        throw new Error("Failed to delete note");
       }
 
-      toast.success('Note deleted successfully')
-      router.push(`/notes/${folderId}`)
+      toast.success("Note deleted successfully");
+      router.push(`/notes/${folderId}`);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete note')
+      toast.error(err.message || "Failed to delete note");
     }
-  }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
+        <div style={{ color: "var(--text-secondary)" }}>Loading...</div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link
-                href={`/notes/${folderId}`}
-                className="text-gray-600 hover:text-gray-900 flex items-center"
-              >
-                <ArrowLeft size={20} className="mr-2" />
-                Back to Folder
-              </Link>
-              <div className="flex items-center text-sm text-gray-500">
-                {saving && 'Saving...'}
-                {!saving && saved && (
-                  <span className="flex items-center text-green-600">
-                    <Check size={16} className="mr-1" />
-                    Saved
-                  </span>
-                )}
-                {!saving && !saved && 'Unsaved changes'}
-              </div>
-            </div>
-            <button
-              onClick={() => setDeleteConfirm(true)}
-              className="text-red-600 hover:text-red-700 flex items-center text-sm"
-            >
-              <Trash2 size={18} className="mr-1" />
-              Delete
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+      <DashboardNav />
 
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="mb-6 flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <Link
+              href={`/notes/${folderId}`}
+              className="text-sm transition-colors duration-300"
+              style={{ color: "var(--text-secondary)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-secondary)")}
+            >
+              ← Back to Folder
+            </Link>
+            <div className="flex items-center text-sm" style={{ color: "var(--text-muted)" }}>
+              {saving && "Saving..."}
+              {!saving && saved && (
+                <span className="flex items-center" style={{ color: "var(--primary)" }}>
+                  <Check size={16} className="mr-1" />
+                  Saved
+                </span>
+              )}
+              {!saving && !saved && "Unsaved changes"}
+            </div>
+          </div>
+          <button onClick={() => setDeleteConfirm(true)} className="flex items-center text-sm text-red-600 hover:text-red-700 transition-colors duration-300 cursor-pointer">
+            <Trash2 size={18} className="mr-1" />
+            Delete
+          </button>
+        </div>
+
         <div className="mb-6">
           <input
             type="text"
             value={title}
             onChange={(e) => handleTitleChange(e.target.value)}
             placeholder="Note title..."
-            className="w-full text-3xl font-bold border-none focus:outline-none focus:ring-0 bg-transparent placeholder-gray-400 text-gray-900"
+            className="w-full text-3xl font-bold border-none focus:outline-none focus:ring-0 bg-transparent"
+            style={{
+              color: "var(--text-primary)",
+              caretColor: "var(--text-primary)",
+            }}
           />
         </div>
 
-        <Editor
-          content={content}
-          onChange={handleContentChange}
-          placeholder="Start writing your note..."
-        />
+        <Editor content={content} onChange={handleContentChange} placeholder="Start writing your note..." />
       </div>
 
       <DeleteConfirmModal
@@ -163,5 +161,6 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
         description="Are you sure you want to delete this note? This action cannot be undone."
       />
     </div>
-  )
+  );
 }
+

@@ -32,7 +32,7 @@ const colorClasses: { [key: string]: string } = {
 export default function FolderList({ folders, onEdit, onDelete }: FolderListProps) {
   if (folders.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-lg shadow">
+      <div className="text-center py-12 rounded-lg shadow" style={{ backgroundColor: "var(--surface-secondary)", borderColor: "var(--border)" }}>
         <FolderIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
         <p className="text-gray-500">No folders yet. Create one to organize your notes!</p>
       </div>
@@ -45,7 +45,7 @@ export default function FolderList({ folders, onEdit, onDelete }: FolderListProp
         const colorClass = colorClasses[folder.color || "default"] || colorClasses.default;
 
         return (
-          <div key={folder.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
+          <div key={folder.id} className="rounded-lg shadow hover:shadow-lg transition-shadow duration-300 overflow-hidden" style={{ backgroundColor: "var(--surface)" }}>
             <div className={`p-4 ${colorClass}`}>
               <div className="flex items-center justify-between">
                 <FolderIcon size={24} />
@@ -54,27 +54,52 @@ export default function FolderList({ folders, onEdit, onDelete }: FolderListProp
             </div>
 
             <div className="p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{folder.name}</h3>
+              <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+                {folder.name}
+              </h3>
               {folder.description && <p className="text-sm text-gray-600 mb-4 line-clamp-2">{folder.description}</p>}
 
               <div className="flex gap-2">
                 <Link
                   href={`/notes/${folder.id}`}
-                  className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300"
+                  style={{
+                    borderColor: "var(--border)",
+                    color: "var(--text-secondary)",
+                    backgroundColor: "var(--surface)",
+                    borderWidth: "1px",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-hover)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface)")}
                 >
                   <FileText size={16} className="mr-1" />
                   View Notes
                 </Link>
                 <button
                   onClick={() => onEdit(folder)}
-                  className="inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  className="inline-flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300 cursor-pointer"
+                  style={{
+                    borderColor: "var(--border)",
+                    color: "var(--text-secondary)",
+                    backgroundColor: "var(--surface)",
+                    borderWidth: "1px",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-hover)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface)")}
                   title="Edit folder"
                 >
                   <Edit2 size={16} />
                 </button>
                 <button
                   onClick={() => onDelete(folder.id)}
-                  className="inline-flex items-center justify-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors"
+                  className="inline-flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium text-red-700 transition-colors duration-300 cursor-pointer"
+                  style={{
+                    borderColor: "#fca5a5",
+                    backgroundColor: "var(--surface)",
+                    borderWidth: "1px",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fef2f2")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface)")}
                   title="Delete folder"
                 >
                   <Trash2 size={16} />
@@ -87,3 +112,4 @@ export default function FolderList({ folders, onEdit, onDelete }: FolderListProp
     </div>
   );
 }
+

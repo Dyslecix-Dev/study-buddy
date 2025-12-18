@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import LogoutButton from "@/components/logout-button";
-import SearchTrigger from "@/components/search/search-trigger";
-import { ArrowLeft, Plus, FileText, Edit2, Trash2 } from "lucide-react";
+import DashboardNav from "@/components/dashboard-nav";
+import { Plus, FileText, Edit2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 
@@ -131,41 +130,58 @@ export default function FolderDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading folder...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
+        <p style={{ color: "var(--text-secondary)" }}>Loading folder...</p>
       </div>
     );
   }
 
   if (!folder) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Folder not found</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
+        <p style={{ color: "var(--text-secondary)" }}>Folder not found</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <Link href="/notes" className="text-gray-600 hover:text-gray-900 mr-4">
-              <ArrowLeft size={20} />
-            </Link>
-            <h2 className="text-xl font-semibold text-gray-900">{folder.name}</h2>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+      <DashboardNav />
 
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {folder.description && <p className="text-gray-600 mb-6">{folder.description}</p>}
+        <div className="mb-6">
+          <Link
+            href="/notes"
+            className="text-sm transition-colors duration-300"
+            style={{ color: "var(--text-secondary)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-secondary)")}
+          >
+            ← Back to Folders
+          </Link>
+        </div>
+
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+            {folder.name}
+          </h2>
+          {folder.description && (
+            <p className="mt-2" style={{ color: "var(--text-secondary)" }}>
+              {folder.description}
+            </p>
+          )}
+        </div>
 
         <div className="flex justify-between items-start mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Notes ({folder.Note.length})</h1>
+          <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
+            Notes ({folder.Note.length})
+          </h1>
           <Link
             href={`/notes/new?folderId=${folderId}`}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-black focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 cursor-pointer"
+            style={{ backgroundColor: "var(--primary)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
             <Plus className="mr-2" size={18} />
             New Note
@@ -173,14 +189,21 @@ export default function FolderDetailPage() {
         </div>
 
         {folder.Note.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <FileText className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No notes in this folder</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by creating a new note.</p>
+          <div className="text-center py-12 rounded-lg shadow" style={{ backgroundColor: "var(--surface)" }}>
+            <FileText className="mx-auto h-12 w-12" style={{ color: "var(--text-muted)" }} />
+            <h3 className="mt-2 text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+              No notes in this folder
+            </h3>
+            <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
+              Get started by creating a new note.
+            </p>
             <div className="mt-6">
               <Link
                 href={`/notes/new?folderId=${folderId}`}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-black transition-all duration-300 cursor-pointer"
+                style={{ backgroundColor: "var(--primary)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
               >
                 <Plus className="mr-2" size={18} />
                 New Note
@@ -190,11 +213,15 @@ export default function FolderDetailPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {folder.Note.map((note) => (
-              <div key={note.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+              <div key={note.id} className="rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden" style={{ backgroundColor: "var(--surface)" }}>
                 <Link href={`/notes/${folderId}/edit/${note.id}`} className="block p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">{note.title || "Untitled"}</h3>
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-3">{getPlainText(note.content) || "No content"}</p>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <h3 className="text-lg font-semibold mb-2 truncate" style={{ color: "var(--text-primary)" }}>
+                    {note.title || "Untitled"}
+                  </h3>
+                  <p className="text-sm mb-4 line-clamp-3" style={{ color: "var(--text-secondary)" }}>
+                    {getPlainText(note.content) || "No content"}
+                  </p>
+                  <div className="flex items-center justify-between text-xs" style={{ color: "var(--text-muted)" }}>
                     <span>Updated</span>
                     <span>{formatDate(note.updatedAt)}</span>
                   </div>
@@ -202,14 +229,29 @@ export default function FolderDetailPage() {
                 <div className="px-6 pb-4 flex gap-2">
                   <Link
                     href={`/notes/${folderId}/edit/${note.id}`}
-                    className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                    className="flex-1 inline-flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300"
+                    style={{
+                      borderColor: "var(--border)",
+                      color: "var(--text-secondary)",
+                      backgroundColor: "var(--surface)",
+                      borderWidth: "1px",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-hover)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface)")}
                   >
                     <Edit2 size={16} className="mr-1" />
                     Edit
                   </Link>
                   <button
                     onClick={() => handleDeleteNote(note.id)}
-                    className="inline-flex items-center justify-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors"
+                    className="inline-flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium text-red-700 transition-colors duration-300 cursor-pointer"
+                    style={{
+                      borderColor: "#fca5a5",
+                      backgroundColor: "var(--surface)",
+                      borderWidth: "1px",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#fef2f2")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface)")}
                   >
                     <Trash2 size={16} />
                   </button>

@@ -6,8 +6,8 @@ export default function NewNotePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-gray-600">Loading...</div>
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background)' }}>
+          <div style={{ color: 'var(--text-secondary)' }}>Loading...</div>
         </div>
       }
     >

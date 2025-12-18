@@ -587,7 +587,7 @@ export function CommandPalette() {
 - [x] User signup/login with Supabase Auth
 - [x] Rich text note editor (Tiptap)
 - [x] Note auto-save
-- [ ] Note list and folders
+- [x] Note list and folders
 - [x] Create/edit/delete tasks
 - [x] Task due dates and priorities
 - [x] Drag-and-drop task ordering
@@ -595,15 +595,13 @@ export function CommandPalette() {
 - [x] Add flashcards to decks
 - [x] Study mode with flip animation
 - [x] Calendar view of deadlines
-- [ ] Global search (Cmd+K)
-- [x] Responsive design (mobile-friendly)
-- [ ] Dark mode toggle
-- [ ] Basic error handling
-- [ ] Loading states
-- [ ] Toast notifications (sonner)
+- [x] Global search (Cmd+K)
+- [x] Responsve design (mobile-friendly)
+- [x] Dark mode toggle
+- [x] Basic error handling
+- [x] Loading states
+- [x] Toast notifications (sonner)
 - [x] Deploy to Vercel
-- [ ] Setup Sentry error tracking
-- [ ] Add Google Analytics
 
 ---
 
