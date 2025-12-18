@@ -239,7 +239,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
           />
         )}
 
-        {/* Flashcards List */}
+        {/* Flashcards Grid */}
         {deck.Flashcard.length === 0 ? (
           <div className="text-center py-12 rounded-lg shadow" style={{ backgroundColor: "var(--surface)" }}>
             <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
@@ -256,28 +256,17 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {deck.Flashcard.map((card) => (
               <div
                 key={card.id}
-                className="rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow duration-300"
+                className="rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow duration-300 flex flex-col"
                 style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderWidth: "1px" }}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="mb-3">
-                      <p className="text-xs mb-1 uppercase" style={{ color: "var(--text-muted)" }}>
-                        Front
-                      </p>
-                      <p style={{ color: "var(--text-primary)" }}>{card.front}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs mb-1 uppercase" style={{ color: "var(--text-muted)" }}>
-                        Back
-                      </p>
-                      <p style={{ color: "var(--text-primary)" }}>{card.back}</p>
-                    </div>
-                  </div>
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <p className="text-xs uppercase font-semibold" style={{ color: "var(--text-muted)" }}>
+                    Flashcard
+                  </p>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleEdit(card)}
@@ -299,6 +288,24 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
                     >
                       <Trash2 size={16} />
                     </button>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="mb-3">
+                    <p className="text-xs mb-1 uppercase" style={{ color: "var(--text-muted)" }}>
+                      Front
+                    </p>
+                    <p className="text-sm line-clamp-3" style={{ color: "var(--text-primary)" }}>
+                      {card.front}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs mb-1 uppercase" style={{ color: "var(--text-muted)" }}>
+                      Back
+                    </p>
+                    <p className="text-sm line-clamp-3" style={{ color: "var(--text-primary)" }}>
+                      {card.back}
+                    </p>
                   </div>
                 </div>
               </div>

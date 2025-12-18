@@ -25,6 +25,8 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
   const router = useRouter();
   const [deck, setDeck] = useState<Deck | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cardCount, setCardCount] = useState<number>(5);
+  const [sessionStarted, setSessionStarted] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -81,6 +83,8 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
     );
   }
 
+  const selectedCards = deck.Flashcard.slice(0, cardCount);
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
       <DashboardNav />
@@ -102,7 +106,56 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
           Study: {deck.name}
         </h2>
 
-        <StudySession deckId={deckId} flashcards={deck.Flashcard} />
+        {!sessionStarted ? (
+          <div className="rounded-lg shadow-lg p-8" style={{ backgroundColor: "var(--surface)" }}>
+            <h3 className="text-xl font-semibold mb-4" style={{ color: "var(--text-primary)" }}>
+              Configure Study Session
+            </h3>
+            <p className="mb-6" style={{ color: "var(--text-secondary)" }}>
+              Choose how many flashcards you want to study in this session.
+            </p>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2" style={{ color: "var(--text-primary)" }}>
+                Number of cards: {cardCount}
+              </label>
+              <input
+                type="range"
+                min="1"
+                max={deck.Flashcard.length}
+                value={cardCount}
+                onChange={(e) => setCardCount(parseInt(e.target.value))}
+                className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${((cardCount - 1) / (deck.Flashcard.length - 1)) * 100}%, var(--border) ${((cardCount - 1) / (deck.Flashcard.length - 1)) * 100}%, var(--border) 100%)`,
+                }}
+              />
+              <div className="flex justify-between text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+                <span>1 card</span>
+                <span>{deck.Flashcard.length} cards (all)</span>
+              </div>
+            </div>
+
+            <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: "var(--surface-secondary)" }}>
+              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                You will study <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{cardCount}</span> out of{" "}
+                <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{deck.Flashcard.length}</span> available flashcards.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setSessionStarted(true)}
+              className="w-full px-6 py-3 rounded-md font-medium transition-all duration-300 cursor-pointer"
+              style={{ backgroundColor: "var(--primary)", color: "#1a1a1a" }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              Start Study Session
+            </button>
+          </div>
+        ) : (
+          <StudySession deckId={deckId} flashcards={selectedCards} />
+        )}
       </div>
     </div>
   );
