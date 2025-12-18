@@ -24,9 +24,9 @@ interface TaskItemProps {
 }
 
 const priorityColors = {
-  0: "border-gray-300",
-  1: "border-yellow-400",
-  2: "border-red-400",
+  0: "#d1d5db", // gray-300
+  1: "#fbbf24", // yellow-400
+  2: "#f87171", // red-400
 };
 
 const priorityLabels = {
@@ -73,32 +73,57 @@ export default function TaskItem({ task, onToggleComplete, onDelete, onEdit, dra
 
   return (
     <div
-      className={`bg-white border-l-4 ${priorityColors[task.priority as keyof typeof priorityColors]} rounded-lg shadow-sm p-4 mb-3 hover:shadow-md transition-shadow duration-300 ${
-        task.completed ? "opacity-60" : ""
-      }`}
+      className={`rounded-lg shadow-sm p-4 mb-3 hover:shadow-md transition-shadow duration-300 ${task.completed ? "opacity-60" : ""}`}
+      style={{
+        backgroundColor: "var(--surface)",
+        borderLeft: `4px solid ${priorityColors[task.priority as keyof typeof priorityColors]}`,
+      }}
     >
       <div className="flex items-start gap-3">
         <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing pt-1">
-          <GripVertical size={20} className="text-gray-400" />
+          <GripVertical size={20} style={{ color: "var(--text-muted)" }} />
         </div>
 
-        <input type="checkbox" checked={task.completed} onChange={handleToggle} disabled={loading} className="mt-1 w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer" />
+        <input
+          type="checkbox"
+          checked={task.completed}
+          onChange={handleToggle}
+          disabled={loading}
+          className="mt-1 w-4 h-4 rounded focus:ring-2 cursor-pointer"
+          style={{ accentColor: "var(--primary)" }}
+        />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1">
-              <h3 className={`text-sm font-medium text-gray-900 ${task.completed ? "line-through" : ""}`}>{task.title}</h3>
-              {task.description && <p className="text-sm text-gray-600 mt-1">{task.description}</p>}
+              <h3 className={`text-sm font-medium ${task.completed ? "line-through" : ""}`} style={{ color: "var(--text-primary)" }}>
+                {task.title}
+              </h3>
+              {task.description && (
+                <p className="text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
+                  {task.description}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={() => onEdit(task)} className="text-gray-400 hover:text-blue-600 transition-colors duration-300 cursor-pointer" title="Edit task">
+              <button
+                onClick={() => onEdit(task)}
+                className="transition-colors duration-300 cursor-pointer"
+                style={{ color: "var(--text-muted)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--primary)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                title="Edit task"
+              >
                 <Edit2 size={16} />
               </button>
               <button
                 onClick={handleDeleteClick}
                 disabled={deleteLoading}
-                className="text-gray-400 hover:text-red-600 transition-colors duration-300 disabled:opacity-50 cursor-pointer"
+                className="transition-colors duration-300 disabled:opacity-50 cursor-pointer"
+                style={{ color: "var(--text-muted)" }}
+                onMouseEnter={(e) => !deleteLoading && (e.currentTarget.style.color = "#ef4444")}
+                onMouseLeave={(e) => !deleteLoading && (e.currentTarget.style.color = "var(--text-muted)")}
                 title="Delete task"
               >
                 <Trash2 size={16} />
@@ -112,9 +137,9 @@ export default function TaskItem({ task, onToggleComplete, onDelete, onEdit, dra
             </span>
 
             {task.dueDate && (
-              <div className="flex items-center gap-1 text-xs text-gray-600">
+              <div className="flex items-center gap-1 text-xs" style={{ color: isOverdue ? "#dc2626" : "var(--text-secondary)" }}>
                 <Calendar size={12} />
-                <span className={isOverdue ? "text-red-600 font-medium" : ""}>
+                <span className={isOverdue ? "font-medium" : ""}>
                   {format(new Date(task.dueDate), "MMM d, yyyy")}
                   {isOverdue && " (Overdue)"}
                 </span>
