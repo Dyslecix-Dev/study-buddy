@@ -3,6 +3,8 @@ import { Philosopher, Mulish } from "next/font/google";
 import { Toaster } from "sonner";
 import CommandPalette from "@/components/search/command-palette";
 import { ThemeProvider } from "@/components/theme-provider";
+import { TimerProvider } from "@/contexts/timer-context";
+import FloatingTimer from "@/components/timer/floating-timer";
 import "./globals.css";
 
 const philosopher = Philosopher({
@@ -30,9 +32,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${philosopher.variable} ${mulish.variable} antialiased`}>
         <ThemeProvider>
-          {children}
-          <CommandPalette />
-          <Toaster position="top-right" />
+          <TimerProvider>
+            {children}
+            <CommandPalette />
+            <FloatingTimer />
+            <Toaster position="top-right" />
+          </TimerProvider>
         </ThemeProvider>
       </body>
     </html>

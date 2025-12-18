@@ -144,6 +144,18 @@ model Task {
   @@index([userId])
 }
 
+model FocusSession {
+  id          String   @id @default(uuid())
+  userId      String
+  mode        String
+  duration    Int
+  completedAt DateTime @default(now())
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, completedAt])
+}
+
 model User {
   id            String         @id
   email         String         @unique
@@ -154,6 +166,7 @@ model User {
   updatedAt     DateTime       @updatedAt
   Deck          Deck[]
   Folder        Folder[]
+  FocusSession  FocusSession[]
   Note          Note[]
   StudySession  StudySession[]
   Task          Task[]

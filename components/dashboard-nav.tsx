@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import SearchTrigger from "@/components/search/search-trigger";
 import { ThemeToggle } from "@/components/theme-toggle";
 import LogoutButton from "@/components/logout-button";
-import { Menu, X, ChevronDown, FileText, CheckSquare, Brain, Calendar as CalendarIcon } from "lucide-react";
+import { Menu, X, ChevronDown, FileText, CheckSquare, Brain, Calendar as CalendarIcon, Timer } from "lucide-react";
 
 export default function DashboardNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -16,6 +16,7 @@ export default function DashboardNav() {
     { name: "Notes", href: "/notes", icon: FileText },
     { name: "Tasks", href: "/tasks", icon: CheckSquare },
     { name: "Flashcards", href: "/flashcards", icon: Brain },
+    { name: "Focus", href: "/focus", icon: Timer },
     { name: "Calendar", href: "/calendar", icon: CalendarIcon },
   ];
 
