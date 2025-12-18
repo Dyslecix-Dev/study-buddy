@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,6 +63,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: "var(--background)" }}>
       <div className="max-w-md w-full space-y-8">
+        <div className="flex justify-center">
+          <Image src="/images/study-buddy.png" alt="Study Buddy logo" width={250} height={100} className="w-48 h-60" />
+        </div>
+
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold" style={{ color: "var(--text-primary)" }}>
             Sign in to your account
@@ -73,6 +78,7 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
             <div>

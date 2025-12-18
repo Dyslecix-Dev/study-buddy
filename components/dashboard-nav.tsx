@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import SearchTrigger from "@/components/search/search-trigger";
 import { ThemeToggle } from "@/components/theme-toggle";
 import LogoutButton from "@/components/logout-button";
-import { Menu, X, ChevronDown, FileText, CheckSquare, Brain, Calendar as CalendarIcon, Timer } from "lucide-react";
+import { Menu, X, FileText, CheckSquare, Brain, Calendar as CalendarIcon, Timer } from "lucide-react";
 
 export default function DashboardNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -27,9 +28,9 @@ export default function DashboardNav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <h2 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-            <Link href="/dashboard">Study Buddy</Link>
-          </h2>
+          <Link href="/dashboard">
+            <Image src="/images/study-buddy-logo.png" alt="Study Buddy logo" width={320} height={40} className="w-80 h-12" />
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
@@ -71,11 +72,7 @@ export default function DashboardNav() {
             </div>
 
             {/* Mobile menu button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-md cursor-pointer transition-colors duration-300"
-              style={{ color: "var(--text-primary)" }}
-            >
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 rounded-md cursor-pointer transition-colors duration-300" style={{ color: "var(--text-primary)" }}>
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>

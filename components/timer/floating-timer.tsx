@@ -2,13 +2,31 @@
 
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Timer, Play, Pause, X, Maximize2 } from "lucide-react";
+import { Timer, Play, Pause, X, Maximize2, Music, SkipForward, SkipBack, Repeat } from "lucide-react";
 import { useTimer } from "@/contexts/timer-context";
 
 export default function FloatingTimer() {
   const router = useRouter();
   const pathname = usePathname();
-  const { mode, timeLeft, isRunning, startTimer, pauseTimer } = useTimer();
+  const {
+    mode,
+    timeLeft,
+    isRunning,
+    isMusicEnabled,
+    musicGenre,
+    isLooping,
+    currentTrackName,
+    audioProgress,
+    audioDuration,
+    startTimer,
+    pauseTimer,
+    toggleMusic,
+    setMusicGenre,
+    nextTrack,
+    previousTrack,
+    toggleLoop,
+    seekAudio,
+  } = useTimer();
   const [isMinimized, setIsMinimized] = useState(false);
 
   // Don't show on focus page or login/signup pages
@@ -20,6 +38,13 @@ export default function FloatingTimer() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const formatAudioTime = (seconds: number): string => {
+    if (isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const getModeColor = () => {
@@ -116,8 +141,8 @@ export default function FloatingTimer() {
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="flex justify-center">
+      {/* Timer Controls */}
+      <div className="flex justify-center mb-3">
         <button
           onClick={isRunning ? pauseTimer : startTimer}
           className="flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 cursor-pointer"
@@ -140,6 +165,131 @@ export default function FloatingTimer() {
             </>
           )}
         </button>
+      </div>
+
+      {/* Music Section */}
+      <div className="border-t pt-3" style={{ borderColor: "var(--border)" }}>
+        {/* Genre Selection & Toggle */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setMusicGenre("jazz")}
+              className="px-2 py-1 rounded text-xs font-medium transition-all duration-300 cursor-pointer"
+              style={{
+                backgroundColor: musicGenre === "jazz" ? "var(--primary)" : "var(--surface-secondary)",
+                color: musicGenre === "jazz" ? "#1a1a1a" : "var(--text-secondary)",
+              }}
+              title="Jazz"
+            >
+              Jazz
+            </button>
+            <button
+              onClick={() => setMusicGenre("edm")}
+              className="px-2 py-1 rounded text-xs font-medium transition-all duration-300 cursor-pointer"
+              style={{
+                backgroundColor: musicGenre === "edm" ? "var(--primary)" : "var(--surface-secondary)",
+                color: musicGenre === "edm" ? "#1a1a1a" : "var(--text-secondary)",
+              }}
+              title="EDM"
+            >
+              EDM
+            </button>
+            <button
+              onClick={() => setMusicGenre("hiphop")}
+              className="px-2 py-1 rounded text-xs font-medium transition-all duration-300 cursor-pointer"
+              style={{
+                backgroundColor: musicGenre === "hiphop" ? "var(--primary)" : "var(--surface-secondary)",
+                color: musicGenre === "hiphop" ? "#1a1a1a" : "var(--text-secondary)",
+              }}
+              title="Hip-Hop"
+            >
+              Hip-Hop
+            </button>
+          </div>
+          <button
+            onClick={toggleMusic}
+            className="p-1 rounded transition-colors duration-300 cursor-pointer"
+            style={{
+              backgroundColor: isMusicEnabled ? "var(--primary)" : "var(--surface-secondary)",
+              color: isMusicEnabled ? "#1a1a1a" : "var(--text-primary)",
+            }}
+            title={isMusicEnabled ? "Music on" : "Music off"}
+          >
+            <Music size={14} style={{ opacity: isMusicEnabled ? 1 : 0.5 }} />
+          </button>
+        </div>
+
+        {/* Current Track & Controls */}
+        {isMusicEnabled && (
+          <>
+            <div className="mb-2">
+              <p className="text-xs text-center truncate mb-2" style={{ color: "var(--text-secondary)" }}>
+                {currentTrackName}
+              </p>
+
+              {/* Audio Scrubber */}
+              <div className="mb-1">
+                <input
+                  type="range"
+                  min="0"
+                  max={audioDuration || 100}
+                  value={audioProgress}
+                  onChange={(e) => seekAudio(Number(e.target.value))}
+                  className="w-full h-1 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${(audioProgress / (audioDuration || 1)) * 100}%, var(--border) ${(audioProgress / (audioDuration || 1)) * 100}%, var(--border) 100%)`,
+                  }}
+                />
+              </div>
+
+              {/* Time Display */}
+              <div className="flex justify-between text-xs mb-2" style={{ color: "var(--text-muted)" }}>
+                <span>{formatAudioTime(audioProgress)}</span>
+                <span>{formatAudioTime(audioDuration)}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-1">
+              <button
+                onClick={previousTrack}
+                className="p-1 rounded transition-colors duration-300 cursor-pointer"
+                style={{
+                  backgroundColor: "var(--surface-secondary)",
+                  color: "var(--text-primary)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-secondary)")}
+                title="Previous track"
+              >
+                <SkipBack size={14} />
+              </button>
+              <button
+                onClick={toggleLoop}
+                className="p-1 rounded transition-colors duration-300 cursor-pointer"
+                style={{
+                  backgroundColor: isLooping ? "var(--primary)" : "var(--surface-secondary)",
+                  color: isLooping ? "#1a1a1a" : "var(--text-primary)",
+                }}
+                title={isLooping ? "Loop: On" : "Loop: Off"}
+              >
+                <Repeat size={14} />
+              </button>
+              <button
+                onClick={nextTrack}
+                className="p-1 rounded transition-colors duration-300 cursor-pointer"
+                style={{
+                  backgroundColor: "var(--surface-secondary)",
+                  color: "var(--text-primary)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-secondary)")}
+                title="Next track"
+              >
+                <SkipForward size={14} />
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       <style jsx>{`

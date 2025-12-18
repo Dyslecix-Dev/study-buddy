@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -92,12 +93,15 @@ export default function SignUpPage() {
             <div className="mx-auto h-12 w-12 text-5xl" style={{ color: "var(--primary)" }}>
               ✓
             </div>
+
             <h2 className="mt-6 text-3xl font-extrabold" style={{ color: "var(--text-primary)" }}>
               Check your email
             </h2>
+
             <p className="mt-2 text-sm" style={{ color: "var(--text-secondary)" }}>
               We've sent a verification link to your email address. Please check your inbox and click the link to verify your account.
             </p>
+
             <div className="mt-6">
               <Link href="/login" className="font-medium" style={{ color: "var(--primary)" }}>
                 Return to login
@@ -112,6 +116,10 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: "var(--background)" }}>
       <div className="max-w-md w-full space-y-8">
+        <div className="flex justify-center">
+          <Image src="/images/study-buddy.png" alt="Study Buddy logo" width={250} height={100} className="w-48 h-60" />
+        </div>
+
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold" style={{ color: "var(--text-primary)" }}>
             Create your account
@@ -123,6 +131,7 @@ export default function SignUpPage() {
             </Link>
           </p>
         </div>
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
             <div>

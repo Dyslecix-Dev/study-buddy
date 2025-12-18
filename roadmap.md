@@ -758,7 +758,7 @@ src/
 **Implementation:**
 
 - Create custom tags
-- Assign tags to notes/tasks/decks
+- Assign tags to notes/tasks/cards
 - Color-coded tags
 - Filter by tags
 - Tag autocomplete

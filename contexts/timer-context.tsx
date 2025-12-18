@@ -1,14 +1,22 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from "react";
 
 type TimerMode = "work" | "shortBreak" | "longBreak";
+type MusicGenre = "jazz" | "edm" | "hiphop";
 
 interface TimerContextType {
   mode: TimerMode;
   timeLeft: number;
   isRunning: boolean;
   sessionsCompleted: number;
+  isMusicEnabled: boolean;
+  musicGenre: MusicGenre;
+  currentTrackIndex: number;
+  isLooping: boolean;
+  currentTrackName: string;
+  audioProgress: number;
+  audioDuration: number;
   customDurations: {
     work: number;
     shortBreak: number;
@@ -19,6 +27,12 @@ interface TimerContextType {
   resetTimer: () => void;
   setMode: (mode: TimerMode) => void;
   setCustomDurations: (durations: { work: number; shortBreak: number; longBreak: number }) => void;
+  toggleMusic: () => void;
+  setMusicGenre: (genre: MusicGenre) => void;
+  nextTrack: () => void;
+  previousTrack: () => void;
+  toggleLoop: () => void;
+  seekAudio: (time: number) => void;
   onSessionComplete?: (mode: TimerMode, duration: number) => void;
   setOnSessionComplete: (callback: (mode: TimerMode, duration: number) => void) => void;
 }
@@ -31,13 +45,162 @@ const DEFAULT_DURATIONS = {
   longBreak: 15 * 60,
 };
 
+// Audio playlists organized by genre and mode
+// Users can add their own tracks following this structure
+const MUSIC_PLAYLISTS: Record<MusicGenre, Record<TimerMode, { name: string; path: string }[]>> = {
+  jazz: {
+    work: [
+      { name: "Jazz Focus 1", path: "/audio/jazz/focus-1.mp3" },
+      { name: "Jazz Focus 2", path: "/audio/jazz/focus-2.mp3" },
+      { name: "Jazz Focus 3", path: "/audio/jazz/focus-3.mp3" },
+    ],
+    shortBreak: [
+      { name: "Jazz Break 1", path: "/audio/jazz/short-break-1.mp3" },
+      { name: "Jazz Break 2", path: "/audio/jazz/short-break-2.mp3" },
+    ],
+    longBreak: [
+      { name: "Jazz Long Break 1", path: "/audio/jazz/long-break-1.mp3" },
+      { name: "Jazz Long Break 2", path: "/audio/jazz/long-break-2.mp3" },
+    ],
+  },
+  edm: {
+    work: [
+      { name: "EDM Focus 1", path: "/audio/edm/focus-1.mp3" },
+      { name: "EDM Focus 2", path: "/audio/edm/focus-2.mp3" },
+      { name: "EDM Focus 3", path: "/audio/edm/focus-3.mp3" },
+    ],
+    shortBreak: [
+      { name: "EDM Break 1", path: "/audio/edm/short-break-1.mp3" },
+      { name: "EDM Break 2", path: "/audio/edm/short-break-2.mp3" },
+    ],
+    longBreak: [
+      { name: "EDM Long Break 1", path: "/audio/edm/long-break-1.mp3" },
+      { name: "EDM Long Break 2", path: "/audio/edm/long-break-2.mp3" },
+    ],
+  },
+  hiphop: {
+    work: [
+      { name: "Hip-Hop Focus 1", path: "/audio/hiphop/focus-1.mp3" },
+      { name: "Hip-Hop Focus 2", path: "/audio/hiphop/focus-2.mp3" },
+      { name: "Hip-Hop Focus 3", path: "/audio/hiphop/focus-3.mp3" },
+    ],
+    shortBreak: [
+      { name: "Hip-Hop Break 1", path: "/audio/hiphop/short-break-1.mp3" },
+      { name: "Hip-Hop Break 2", path: "/audio/hiphop/short-break-2.mp3" },
+    ],
+    longBreak: [
+      { name: "Hip-Hop Long Break 1", path: "/audio/hiphop/long-break-1.mp3" },
+      { name: "Hip-Hop Long Break 2", path: "/audio/hiphop/long-break-2.mp3" },
+    ],
+  },
+};
+
 export function TimerProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<TimerMode>("work");
   const [timeLeft, setTimeLeft] = useState(DEFAULT_DURATIONS.work);
   const [isRunning, setIsRunning] = useState(false);
   const [customDurations, setCustomDurations] = useState(DEFAULT_DURATIONS);
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
+  const [isMusicEnabled, setIsMusicEnabled] = useState(false);
+  const [musicGenre, setMusicGenreState] = useState<MusicGenre>("jazz");
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [isLooping, setIsLooping] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
   const [onSessionComplete, setOnSessionComplete] = useState<((mode: TimerMode, duration: number) => void) | undefined>();
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Get current playlist based on mode and genre
+  const getCurrentPlaylist = useCallback(() => {
+    return MUSIC_PLAYLISTS[musicGenre][mode];
+  }, [musicGenre, mode]);
+
+  // Get current track
+  const getCurrentTrack = useCallback(() => {
+    const playlist = getCurrentPlaylist();
+    return playlist[currentTrackIndex] || playlist[0];
+  }, [getCurrentPlaylist, currentTrackIndex]);
+
+  const currentTrackName = getCurrentTrack().name;
+
+  // Initialize audio element
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      audioRef.current = new Audio();
+      audioRef.current.volume = 0.3;
+
+      // Handle track end - play next track or loop current
+      const handleTrackEnd = () => {
+        if (isLooping) {
+          audioRef.current?.play();
+        } else {
+          const playlist = getCurrentPlaylist();
+          const nextIndex = (currentTrackIndex + 1) % playlist.length;
+          setCurrentTrackIndex(nextIndex);
+        }
+      };
+
+      // Update progress as track plays
+      const handleTimeUpdate = () => {
+        if (audioRef.current) {
+          setAudioProgress(audioRef.current.currentTime);
+        }
+      };
+
+      // Update duration when metadata loads
+      const handleLoadedMetadata = () => {
+        if (audioRef.current) {
+          setAudioDuration(audioRef.current.duration);
+        }
+      };
+
+      audioRef.current.addEventListener("ended", handleTrackEnd);
+      audioRef.current.addEventListener("timeupdate", handleTimeUpdate);
+      audioRef.current.addEventListener("loadedmetadata", handleLoadedMetadata);
+
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.removeEventListener("ended", handleTrackEnd);
+          audioRef.current.removeEventListener("timeupdate", handleTimeUpdate);
+          audioRef.current.removeEventListener("loadedmetadata", handleLoadedMetadata);
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+      };
+    }
+  }, [isLooping, currentTrackIndex, getCurrentPlaylist]);
+
+  // Handle music playback based on timer state, mode, genre, and track
+  useEffect(() => {
+    if (!audioRef.current || !isMusicEnabled) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      return;
+    }
+
+    const audio = audioRef.current;
+    const currentTrack = getCurrentTrack();
+    const trackPath = currentTrack.path;
+
+    // If the track has changed, update the source
+    if (audio.src !== window.location.origin + trackPath) {
+      audio.src = trackPath;
+      audio.load();
+    }
+
+    if (isRunning) {
+      // Play music when timer is running
+      audio.play().catch((error) => {
+        // Auto-play might be blocked by browser
+        console.log("Audio play prevented:", error);
+      });
+    } else {
+      // Pause music when timer is paused
+      audio.pause();
+    }
+  }, [isRunning, mode, isMusicEnabled, currentTrackIndex, musicGenre, getCurrentTrack]);
 
   const playNotificationSound = useCallback(() => {
     try {
@@ -129,10 +292,43 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     [customDurations]
   );
 
-  const updateCustomDurations = useCallback((durations: typeof DEFAULT_DURATIONS) => {
-    setCustomDurations(durations);
-    setTimeLeft(durations[mode]);
-  }, [mode]);
+  const updateCustomDurations = useCallback(
+    (durations: typeof DEFAULT_DURATIONS) => {
+      setCustomDurations(durations);
+      setTimeLeft(durations[mode]);
+    },
+    [mode]
+  );
+
+  const toggleMusic = useCallback(() => {
+    setIsMusicEnabled((prev) => !prev);
+  }, []);
+
+  const setMusicGenre = useCallback((genre: MusicGenre) => {
+    setMusicGenreState(genre);
+    setCurrentTrackIndex(0); // Reset to first track when changing genre
+  }, []);
+
+  const nextTrack = useCallback(() => {
+    const playlist = getCurrentPlaylist();
+    setCurrentTrackIndex((prev) => (prev + 1) % playlist.length);
+  }, [getCurrentPlaylist]);
+
+  const previousTrack = useCallback(() => {
+    const playlist = getCurrentPlaylist();
+    setCurrentTrackIndex((prev) => (prev - 1 + playlist.length) % playlist.length);
+  }, [getCurrentPlaylist]);
+
+  const toggleLoop = useCallback(() => {
+    setIsLooping((prev) => !prev);
+  }, []);
+
+  const seekAudio = useCallback((time: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setAudioProgress(time);
+    }
+  }, []);
 
   return (
     <TimerContext.Provider
@@ -141,12 +337,25 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         timeLeft,
         isRunning,
         sessionsCompleted,
+        isMusicEnabled,
+        musicGenre,
+        currentTrackIndex,
+        isLooping,
+        currentTrackName,
+        audioProgress,
+        audioDuration,
         customDurations,
         startTimer,
         pauseTimer,
         resetTimer,
         setMode,
         setCustomDurations: updateCustomDurations,
+        toggleMusic,
+        setMusicGenre,
+        nextTrack,
+        previousTrack,
+        toggleLoop,
+        seekAudio,
         onSessionComplete,
         setOnSessionComplete: (callback) => setOnSessionComplete(() => callback),
       }}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Play, Pause, RotateCcw, Settings as SettingsIcon } from "lucide-react";
+import { Play, Pause, RotateCcw, Settings as SettingsIcon, Music, SkipForward, SkipBack, Repeat } from "lucide-react";
 import { useTimer } from "@/contexts/timer-context";
 import TimerSettings from "./timer-settings";
 
@@ -13,12 +13,24 @@ export default function PomodoroTimer() {
     timeLeft,
     isRunning,
     sessionsCompleted,
+    isMusicEnabled,
+    musicGenre,
+    isLooping,
+    currentTrackName,
+    audioProgress,
+    audioDuration,
     customDurations,
     startTimer,
     pauseTimer,
     resetTimer,
     setMode,
     setCustomDurations,
+    toggleMusic,
+    setMusicGenre,
+    nextTrack,
+    previousTrack,
+    toggleLoop,
+    seekAudio,
   } = useTimer();
 
   const [showSettings, setShowSettings] = useState(false);
@@ -27,6 +39,13 @@ export default function PomodoroTimer() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const formatAudioTime = (seconds: number): string => {
+    if (isNaN(seconds)) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const handlePlayPause = () => {
@@ -175,10 +194,139 @@ export default function PomodoroTimer() {
           </button>
         </div>
 
-        {/* Session Counter */}
-        <div className="text-center">
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-            Sessions completed today: <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{sessionsCompleted}</span>
+        {/* Music Player Section */}
+        <div className="border-t pt-4" style={{ borderColor: "var(--border)" }}>
+          {/* Genre Selection & Toggle */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setMusicGenre("jazz")}
+                className="px-3 py-1 rounded text-xs font-medium transition-all duration-300 cursor-pointer"
+                style={{
+                  backgroundColor: musicGenre === "jazz" ? "var(--primary)" : "var(--surface-secondary)",
+                  color: musicGenre === "jazz" ? "#1a1a1a" : "var(--text-secondary)",
+                }}
+              >
+                Jazz
+              </button>
+              <button
+                onClick={() => setMusicGenre("edm")}
+                className="px-3 py-1 rounded text-xs font-medium transition-all duration-300 cursor-pointer"
+                style={{
+                  backgroundColor: musicGenre === "edm" ? "var(--primary)" : "var(--surface-secondary)",
+                  color: musicGenre === "edm" ? "#1a1a1a" : "var(--text-secondary)",
+                }}
+              >
+                EDM
+              </button>
+              <button
+                onClick={() => setMusicGenre("hiphop")}
+                className="px-3 py-1 rounded text-xs font-medium transition-all duration-300 cursor-pointer"
+                style={{
+                  backgroundColor: musicGenre === "hiphop" ? "var(--primary)" : "var(--surface-secondary)",
+                  color: musicGenre === "hiphop" ? "#1a1a1a" : "var(--text-secondary)",
+                }}
+              >
+                Hip-Hop
+              </button>
+            </div>
+            <button
+              onClick={toggleMusic}
+              className="flex items-center gap-2 px-3 py-1 rounded-md transition-colors duration-300 cursor-pointer text-xs"
+              style={{
+                backgroundColor: isMusicEnabled ? "var(--primary)" : "var(--surface-secondary)",
+                color: isMusicEnabled ? "#1a1a1a" : "var(--text-primary)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+              title={isMusicEnabled ? "Music on" : "Music off"}
+            >
+              <Music size={14} style={{ opacity: isMusicEnabled ? 1 : 0.5 }} />
+              {isMusicEnabled ? "On" : "Off"}
+            </button>
+          </div>
+
+          {/* Current Track Display & Scrubber */}
+          {isMusicEnabled && (
+            <div className="mb-3">
+              <p className="text-xs text-center mb-2" style={{ color: "var(--text-secondary)" }}>
+                Now Playing
+              </p>
+              <p className="text-sm font-medium text-center truncate mb-3" style={{ color: "var(--text-primary)" }}>
+                {currentTrackName}
+              </p>
+
+              {/* Audio Progress Bar */}
+              <div className="mb-2">
+                <input
+                  type="range"
+                  min="0"
+                  max={audioDuration || 100}
+                  value={audioProgress}
+                  onChange={(e) => seekAudio(Number(e.target.value))}
+                  className="w-full h-1 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${(audioProgress / (audioDuration || 1)) * 100}%, var(--border) ${(audioProgress / (audioDuration || 1)) * 100}%, var(--border) 100%)`,
+                  }}
+                />
+              </div>
+
+              {/* Time Display */}
+              <div className="flex justify-between text-xs" style={{ color: "var(--text-muted)" }}>
+                <span>{formatAudioTime(audioProgress)}</span>
+                <span>{formatAudioTime(audioDuration)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Music Controls */}
+          {isMusicEnabled && (
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <button
+                onClick={previousTrack}
+                className="p-2 rounded-full transition-colors duration-300 cursor-pointer"
+                style={{
+                  backgroundColor: "var(--surface-secondary)",
+                  color: "var(--text-primary)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-secondary)")}
+                title="Previous track"
+              >
+                <SkipBack size={18} />
+              </button>
+              <button
+                onClick={toggleLoop}
+                className="p-2 rounded-full transition-colors duration-300 cursor-pointer"
+                style={{
+                  backgroundColor: isLooping ? "var(--primary)" : "var(--surface-secondary)",
+                  color: isLooping ? "#1a1a1a" : "var(--text-primary)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                title={isLooping ? "Loop: On" : "Loop: Off"}
+              >
+                <Repeat size={18} />
+              </button>
+              <button
+                onClick={nextTrack}
+                className="p-2 rounded-full transition-colors duration-300 cursor-pointer"
+                style={{
+                  backgroundColor: "var(--surface-secondary)",
+                  color: "var(--text-primary)",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-secondary)")}
+                title="Next track"
+              >
+                <SkipForward size={18} />
+              </button>
+            </div>
+          )}
+
+          {/* Session Counter */}
+          <p className="text-xs text-center" style={{ color: "var(--text-secondary)" }}>
+            Sessions Completed: <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{sessionsCompleted}</span>
           </p>
         </div>
       </div>
