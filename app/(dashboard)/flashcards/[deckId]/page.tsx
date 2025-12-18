@@ -5,16 +5,22 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import DashboardNav from "@/components/dashboard-nav";
-import { Plus, Trash2, Edit2, Play } from "lucide-react";
+import { Plus, Trash2, Edit2, Play, Clock } from "lucide-react";
 import FlashcardForm from "@/components/flashcards/flashcard-form";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
+import { isDueForReview, getIntervalDescription } from "@/lib/spaced-repetition";
 
 interface Flashcard {
   id: string;
   front: string;
   back: string;
   createdAt: Date;
+  easeFactor: number;
+  interval: number;
+  repetitions: number;
+  nextReview: Date | null;
+  lastReviewed: Date | null;
 }
 
 interface Deck {
@@ -22,6 +28,92 @@ interface Deck {
   name: string;
   description: string | null;
   Flashcard: Flashcard[];
+}
+
+// Helper function to get card status and colors
+function getCardStatus(card: Flashcard) {
+  const isDue = isDueForReview(card.nextReview);
+  const now = new Date();
+
+  // Check if card has been studied but not successfully recalled
+  const hasBeenStudied = card.lastReviewed !== null;
+
+  // If card has 0 repetitions but has been studied, it's due for review (relearning)
+  if (card.repetitions === 0 && hasBeenStudied) {
+    return {
+      label: "Due Now",
+      color: "#dc2626", // red
+      bgColor: "#fef2f2",
+      borderColor: "#fca5a5",
+    };
+  }
+
+  // If card has never been studied, it's new
+  if (card.repetitions === 0 && !hasBeenStudied) {
+    return {
+      label: "New",
+      color: "#3b82f6", // blue
+      bgColor: "#eff6ff",
+      borderColor: "#93c5fd",
+    };
+  }
+
+  if (!card.nextReview) {
+    return {
+      label: "New",
+      color: "#3b82f6", // blue
+      bgColor: "#eff6ff",
+      borderColor: "#93c5fd",
+    };
+  }
+
+  if (isDue) {
+    return {
+      label: "Due Now",
+      color: "#dc2626", // red
+      bgColor: "#fef2f2",
+      borderColor: "#fca5a5",
+    };
+  }
+
+  const daysUntilReview = Math.ceil((new Date(card.nextReview).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (daysUntilReview <= 1) {
+    return {
+      label: "Later Today",
+      color: "#ea580c", // orange
+      bgColor: "#fff7ed",
+      borderColor: "#fdba74",
+    };
+  } else if (daysUntilReview <= 7) {
+    return {
+      label: `In ${daysUntilReview} days`,
+      color: "#ca8a04", // yellow
+      bgColor: "#fefce8",
+      borderColor: "#fde047",
+    };
+  } else if (daysUntilReview <= 30) {
+    return {
+      label: getIntervalDescription(new Date(card.nextReview)),
+      color: "#16a34a", // green
+      bgColor: "#f0fdf4",
+      borderColor: "#86efac",
+    };
+  } else if (daysUntilReview <= 365) {
+    return {
+      label: getIntervalDescription(new Date(card.nextReview)),
+      color: "#0891b2", // cyan
+      bgColor: "#ecfeff",
+      borderColor: "#67e8f9",
+    };
+  } else {
+    return {
+      label: getIntervalDescription(new Date(card.nextReview)),
+      color: "#7c3aed", // purple
+      bgColor: "#faf5ff",
+      borderColor: "#c4b5fd",
+    };
+  }
 }
 
 export default function DeckDetailPage({ params }: { params: Promise<{ deckId: string }> }) {
@@ -32,6 +124,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
   const [showForm, setShowForm] = useState(false);
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   useEffect(() => {
     checkAuth();
@@ -196,37 +289,153 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
           )}
         </div>
 
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-            Flashcards ({deck.Flashcard.length})
-          </h1>
-          <div className="flex gap-3">
-            {deck.Flashcard.length > 0 && (
-              <Link
-                href={`/flashcards/${deckId}/study`}
-                className="flex items-center gap-2 px-4 py-2 text-white rounded-md transition-all duration-300"
-                style={{ backgroundColor: "var(--secondary)" }}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
+              Flashcards ({deck.Flashcard.length})
+            </h1>
+            <div className="flex gap-3">
+              {(() => {
+                // Calculate filtered cards count
+                const filteredCards = deck.Flashcard.filter((card) => {
+                  if (filterStatus === "all") return true;
+                  if (filterStatus === "new") {
+                    return card.repetitions === 0 && card.lastReviewed === null;
+                  }
+                  if (filterStatus === "due") {
+                    const isDue = isDueForReview(card.nextReview);
+                    const isRelearning = card.repetitions === 0 && card.lastReviewed !== null;
+                    const isLaterToday = card.nextReview && !isDue && Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 1;
+                    return isDue || isRelearning || isLaterToday;
+                  }
+                  if (filterStatus === "week") {
+                    if (!card.nextReview || isDueForReview(card.nextReview)) return false;
+                    const daysUntil = Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                    return daysUntil > 1 && daysUntil <= 7;
+                  }
+                  if (filterStatus === "month") {
+                    if (!card.nextReview || isDueForReview(card.nextReview)) return false;
+                    const daysUntil = Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                    return daysUntil > 7 && daysUntil <= 30;
+                  }
+                  return true;
+                });
+
+                const hasCards = filteredCards.length > 0;
+                const buttonLabel = filterStatus === "all" ? "Study All" : `Study ${filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}`;
+
+                return hasCards ? (
+                  <Link
+                    href={`/flashcards/${deckId}/study?filter=${filterStatus}`}
+                    className="flex items-center gap-2 px-4 py-2 text-white rounded-md transition-all duration-300"
+                    style={{ backgroundColor: "var(--secondary)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                  >
+                    <Play size={18} />
+                    {buttonLabel} ({filteredCards.length})
+                  </Link>
+                ) : deck.Flashcard.length > 0 ? (
+                  <button
+                    disabled
+                    className="flex items-center gap-2 px-4 py-2 text-white rounded-md opacity-50 cursor-not-allowed"
+                    style={{ backgroundColor: "var(--secondary)" }}
+                    title={`No ${filterStatus} cards to study`}
+                  >
+                    <Play size={18} />
+                    {buttonLabel} (0)
+                  </button>
+                ) : null;
+              })()}
+              <button
+                onClick={() => {
+                  setEditingCard(null);
+                  setShowForm(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-black rounded-md transition-all duration-300 cursor-pointer"
+                style={{ backgroundColor: "var(--primary)" }}
                 onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
                 onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
               >
-                <Play size={18} />
-                Study Now
-              </Link>
-            )}
-            <button
-              onClick={() => {
-                setEditingCard(null);
-                setShowForm(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2 text-black rounded-md transition-all duration-300 cursor-pointer"
-              style={{ backgroundColor: "var(--primary)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-            >
-              <Plus size={18} />
-              Add Card
-            </button>
+                <Plus size={18} />
+                Add Card
+              </button>
+            </div>
           </div>
+
+          {/* Filter Buttons */}
+          {deck.Flashcard.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {["all", "new", "due", "week", "month"].map((status) => {
+                  const isActive = filterStatus === status;
+                  const count =
+                    status === "all"
+                      ? deck.Flashcard.length
+                      : status === "new"
+                      ? deck.Flashcard.filter((c) => c.repetitions === 0 && c.lastReviewed === null).length
+                      : status === "due"
+                      ? deck.Flashcard.filter((c) => {
+                          const isDue = isDueForReview(c.nextReview);
+                          const isRelearning = c.repetitions === 0 && c.lastReviewed !== null;
+                          const isLaterToday = c.nextReview && !isDue && Math.ceil((new Date(c.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 1;
+                          return isDue || isRelearning || isLaterToday;
+                        }).length
+                      : status === "week"
+                      ? deck.Flashcard.filter((c) => {
+                          if (!c.nextReview || isDueForReview(c.nextReview)) return false;
+                          const daysUntil = Math.ceil((new Date(c.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                          return daysUntil > 1 && daysUntil <= 7;
+                        }).length
+                      : deck.Flashcard.filter((c) => {
+                          if (!c.nextReview || isDueForReview(c.nextReview)) return false;
+                          const daysUntil = Math.ceil((new Date(c.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                          return daysUntil > 7 && daysUntil <= 30;
+                        }).length;
+
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => setFilterStatus(status)}
+                      className="px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-300 cursor-pointer"
+                      style={{
+                        backgroundColor: isActive ? "var(--primary)" : "var(--surface)",
+                        color: isActive ? "black" : "var(--text-secondary)",
+                        borderWidth: "1px",
+                        borderColor: isActive ? "var(--primary)" : "var(--border)",
+                      }}
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Color Legend */}
+              <div className="flex flex-wrap gap-3 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: "#3b82f6" }} />
+                  <span style={{ color: "var(--text-secondary)" }}>New</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: "#dc2626" }} />
+                  <span style={{ color: "var(--text-secondary)" }}>Due Now</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: "#ea580c" }} />
+                  <span style={{ color: "var(--text-secondary)" }}>Later Today</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: "#ca8a04" }} />
+                  <span style={{ color: "var(--text-secondary)" }}>This Week</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: "#16a34a" }} />
+                  <span style={{ color: "var(--text-secondary)" }}>This Month</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Flashcard Form */}
@@ -257,59 +466,101 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {deck.Flashcard.map((card) => (
-              <div
-                key={card.id}
-                className="rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow duration-300 flex flex-col"
-                style={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", borderWidth: "1px" }}
-              >
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <p className="text-xs uppercase font-semibold" style={{ color: "var(--text-muted)" }}>
-                    Flashcard
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleEdit(card)}
-                      className="transition-colors duration-300 cursor-pointer"
-                      style={{ color: "var(--text-muted)" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "var(--primary)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
-                      title="Edit flashcard"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteFlashcard(card.id)}
-                      className="transition-colors duration-300 cursor-pointer"
-                      style={{ color: "var(--text-muted)" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "#dc2626")}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
-                      title="Delete flashcard"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+            {deck.Flashcard.filter((card) => {
+              if (filterStatus === "all") return true;
+              if (filterStatus === "new") {
+                return card.repetitions === 0 && card.lastReviewed === null;
+              }
+              if (filterStatus === "due") {
+                const isDue = isDueForReview(card.nextReview);
+                const isRelearning = card.repetitions === 0 && card.lastReviewed !== null;
+                const isLaterToday = card.nextReview && !isDue && Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 1;
+                return isDue || isRelearning || isLaterToday;
+              }
+              if (filterStatus === "week") {
+                if (!card.nextReview || isDueForReview(card.nextReview)) return false;
+                const daysUntil = Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                return daysUntil > 1 && daysUntil <= 7;
+              }
+              if (filterStatus === "month") {
+                if (!card.nextReview || isDueForReview(card.nextReview)) return false;
+                const daysUntil = Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                return daysUntil > 7 && daysUntil <= 30;
+              }
+              return true;
+            }).map((card) => {
+              const status = getCardStatus(card);
+              return (
+                <div
+                  key={card.id}
+                  className="rounded-lg shadow-sm p-4 hover:shadow-md transition-all duration-300 flex flex-col"
+                  style={{
+                    backgroundColor: status.bgColor,
+                    borderColor: status.borderColor,
+                    borderWidth: "2px",
+                    borderStyle: "solid",
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="text-xs font-bold px-2 py-1 rounded"
+                        style={{
+                          backgroundColor: status.color,
+                          color: "white",
+                        }}
+                      >
+                        {status.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleEdit(card)}
+                        className="transition-colors duration-300 cursor-pointer"
+                        style={{ color: "var(--text-muted)" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--primary)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                        title="Edit flashcard"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteFlashcard(card.id)}
+                        className="transition-colors duration-300 cursor-pointer"
+                        style={{ color: "var(--text-muted)" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "#dc2626")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                        title="Delete flashcard"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
+                  <div className="flex-1">
+                    <div className="mb-3">
+                      <p className="text-xs mb-1 uppercase font-semibold" style={{ color: status.color }}>
+                        Front
+                      </p>
+                      <p className="text-sm text-black line-clamp-3">{card.front}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs mb-1 uppercase font-semibold" style={{ color: status.color }}>
+                        Back
+                      </p>
+                      <p className="text-sm text-black line-clamp-3">{card.back}</p>
+                    </div>
+                  </div>
+                  {card.nextReview && (
+                    <div className="mt-3 pt-3 border-t flex items-center gap-2" style={{ borderColor: status.borderColor }}>
+                      <Clock size={14} style={{ color: status.color }} />
+                      <span className="text-xs" style={{ color: status.color }}>
+                        {status.label === "New" ? "Never reviewed" : `Next: ${status.label}`}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex-1">
-                  <div className="mb-3">
-                    <p className="text-xs mb-1 uppercase" style={{ color: "var(--text-muted)" }}>
-                      Front
-                    </p>
-                    <p className="text-sm line-clamp-3" style={{ color: "var(--text-primary)" }}>
-                      {card.front}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs mb-1 uppercase" style={{ color: "var(--text-muted)" }}>
-                      Back
-                    </p>
-                    <p className="text-sm line-clamp-3" style={{ color: "var(--text-primary)" }}>
-                      {card.back}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

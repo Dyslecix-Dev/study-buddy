@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { calculateNextReview, mapRatingToQuality } from '@/lib/spaced-repetition'
 
 type Params = {
   params: Promise<{
@@ -35,36 +36,72 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     const body = await request.json()
-    const { rating } = body // 0-5 rating (0=wrong, 3=correct, 5=easy)
+    const { rating } = body // 0, 2, 3, or 5 (wrong, hard, good, easy)
 
-    if (rating === undefined || rating < 0 || rating > 5) {
-      return NextResponse.json({ error: 'Rating must be between 0 and 5' }, { status: 400 })
+    if (rating === undefined || ![0, 2, 3, 5].includes(rating)) {
+      return NextResponse.json(
+        { error: 'Rating must be 0, 2, 3, or 5' },
+        { status: 400 }
+      )
     }
+
+    // Get current flashcard data
+    const flashcard = await prisma.flashcard.findUnique({
+      where: { id: flashcardId },
+    })
+
+    if (!flashcard) {
+      return NextResponse.json({ error: 'Flashcard not found' }, { status: 404 })
+    }
+
+    // Map UI rating to SM-2 quality value
+    const quality = mapRatingToQuality(rating as 0 | 2 | 3 | 5)
+
+    // Calculate next review schedule using SM-2 algorithm
+    const scheduleResult = calculateNextReview(
+      {
+        easeFactor: flashcard.easeFactor,
+        interval: flashcard.interval,
+        repetitions: flashcard.repetitions,
+        lastReviewed: flashcard.lastReviewed,
+        nextReview: flashcard.nextReview,
+      },
+      quality
+    )
 
     // Create review record
     const review = await prisma.review.create({
       data: {
         flashcardId: flashcardId,
-        quality: rating,
+        quality: quality,
       },
     })
 
-    // Update flashcard review stats (basic for now, SM-2 algorithm can be added later)
-    const flashcard = await prisma.flashcard.findUnique({
+    // Update flashcard with new SM-2 scheduling data
+    const updatedFlashcard = await prisma.flashcard.update({
       where: { id: flashcardId },
+      data: {
+        easeFactor: scheduleResult.easeFactor,
+        interval: scheduleResult.interval,
+        repetitions: scheduleResult.repetitions,
+        nextReview: scheduleResult.nextReview,
+        lastReviewed: new Date(),
+      },
     })
 
-    if (flashcard) {
-      await prisma.flashcard.update({
-        where: { id: flashcardId },
-        data: {
-          lastReviewed: new Date(),
-          repetitions: flashcard.repetitions + 1,
+    return NextResponse.json(
+      {
+        review,
+        flashcard: updatedFlashcard,
+        schedule: {
+          nextReview: scheduleResult.nextReview,
+          interval: scheduleResult.interval,
+          repetitions: scheduleResult.repetitions,
+          easeFactor: scheduleResult.easeFactor,
         },
-      })
-    }
-
-    return NextResponse.json(review, { status: 201 })
+      },
+      { status: 201 }
+    )
   } catch (error) {
     console.error('Error recording review:', error)
     return NextResponse.json({ error: 'Failed to record review' }, { status: 500 })

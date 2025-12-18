@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Check, X as XIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, X as XIcon, Clock } from "lucide-react";
 import Flashcard from "./flashcard";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { getIntervalDescription } from "@/lib/spaced-repetition";
 
 interface FlashcardData {
   id: string;
@@ -22,6 +23,8 @@ type RatingType = "wrong" | "hard" | "good" | "easy";
 interface CardRating {
   rating: number;
   type: RatingType;
+  nextReview?: Date;
+  interval?: number;
 }
 
 export default function StudySession({ deckId, flashcards }: StudySessionProps) {
@@ -52,17 +55,36 @@ export default function StudySession({ deckId, flashcards }: StudySessionProps) 
   };
 
   const handleRating = async (rating: number, type: RatingType) => {
-    // Record the rating
-    setRatings(new Map(ratings).set(currentCard.id, { rating, type }));
-    setStudiedCards(new Set(studiedCards).add(currentIndex));
-
-    // Send to API
+    // Send to API first to get scheduling information
     try {
-      await fetch(`/api/decks/${deckId}/flashcards/${currentCard.id}/review`, {
+      const response = await fetch(`/api/decks/${deckId}/flashcards/${currentCard.id}/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rating }),
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to record review");
+      }
+
+      const data = await response.json();
+
+      // Record the rating with scheduling info
+      setRatings(
+        new Map(ratings).set(currentCard.id, {
+          rating,
+          type,
+          nextReview: data.schedule?.nextReview ? new Date(data.schedule.nextReview) : undefined,
+          interval: data.schedule?.interval,
+        })
+      );
+      setStudiedCards(new Set(studiedCards).add(currentIndex));
+
+      // Show success toast with next review info
+      if (data.schedule?.nextReview) {
+        const intervalDesc = getIntervalDescription(new Date(data.schedule.nextReview));
+        toast.success(`Card scheduled for review ${intervalDesc}`);
+      }
     } catch (error) {
       console.error("Error recording review:", error);
       toast.error("Failed to record review");
@@ -131,9 +153,7 @@ export default function StudySession({ deckId, flashcards }: StudySessionProps) 
                   setCurrentIndex(idx);
                   setShowAnswer(false);
                 }}
-                className={`w-10 h-10 rounded-lg font-medium text-sm transition-all duration-300 cursor-pointer flex items-center justify-center ${
-                  isCurrentCard ? "ring-2 ring-offset-2" : ""
-                }`}
+                className={`w-10 h-10 rounded-lg font-medium text-sm transition-all duration-300 cursor-pointer flex items-center justify-center ${isCurrentCard ? "ring-2 ring-offset-2" : ""}`}
                 style={{
                   backgroundColor: "var(--surface-secondary)",
                   color: "var(--text-primary)",
@@ -173,27 +193,27 @@ export default function StudySession({ deckId, flashcards }: StudySessionProps) 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <button
               onClick={() => handleRating(0, "wrong")}
-              className="px-4 py-3 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors duration-300 font-medium text-sm cursor-pointer"
+              className="px-4 py-3 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors duration-300 font-medium text-sm cursor-pointer flex flex-col items-center gap-1"
             >
-              Wrong
+              <span>Wrong</span>
             </button>
             <button
               onClick={() => handleRating(2, "hard")}
-              className="px-4 py-3 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition-colors duration-300 font-medium text-sm cursor-pointer"
+              className="px-4 py-3 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition-colors duration-300 font-medium text-sm cursor-pointer flex flex-col items-center gap-1"
             >
-              Hard
+              <span>Hard</span>
             </button>
             <button
               onClick={() => handleRating(3, "good")}
-              className="px-4 py-3 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors duration-300 font-medium text-sm cursor-pointer"
+              className="px-4 py-3 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors duration-300 font-medium text-sm cursor-pointer flex flex-col items-center gap-1"
             >
-              Good
+              <span>Good</span>
             </button>
             <button
               onClick={() => handleRating(5, "easy")}
-              className="px-4 py-3 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors duration-300 font-medium text-sm cursor-pointer"
+              className="px-4 py-3 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors duration-300 font-medium text-sm cursor-pointer flex flex-col items-center gap-1"
             >
-              Easy
+              <span>Easy</span>
             </button>
           </div>
         </div>
@@ -216,10 +236,7 @@ export default function StudySession({ deckId, flashcards }: StudySessionProps) 
         </button>
 
         {allReviewed ? (
-          <button
-            onClick={handleFinish}
-            className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-300 font-medium cursor-pointer"
-          >
+          <button onClick={handleFinish} className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-300 font-medium cursor-pointer">
             Finish Session
           </button>
         ) : (
