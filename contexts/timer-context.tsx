@@ -45,53 +45,22 @@ const DEFAULT_DURATIONS = {
   longBreak: 15 * 60,
 };
 
-// Audio playlists organized by genre and mode
-// Users can add their own tracks following this structure
+// TODO Add rest of music
 const MUSIC_PLAYLISTS: Record<MusicGenre, Record<TimerMode, { name: string; path: string }[]>> = {
   jazz: {
-    work: [
-      { name: "Jazz Focus 1", path: "/audio/jazz/focus-1.mp3" },
-      { name: "Jazz Focus 2", path: "/audio/jazz/focus-2.mp3" },
-      { name: "Jazz Focus 3", path: "/audio/jazz/focus-3.mp3" },
-    ],
-    shortBreak: [
-      { name: "Jazz Break 1", path: "/audio/jazz/short-break-1.mp3" },
-      { name: "Jazz Break 2", path: "/audio/jazz/short-break-2.mp3" },
-    ],
-    longBreak: [
-      { name: "Jazz Long Break 1", path: "/audio/jazz/long-break-1.mp3" },
-      { name: "Jazz Long Break 2", path: "/audio/jazz/long-break-2.mp3" },
-    ],
+    work: [{ name: "Down the Street", path: "/audio/jazz/down-the-street.mp3" }],
+    shortBreak: [{ name: "Downtown Boogie", path: "/audio/jazz/downtown-boogie.mp3" }],
+    longBreak: [{ name: "Moonlit Romance", path: "/audio/jazz/moonlit-romance.mp3" }],
   },
   edm: {
-    work: [
-      { name: "EDM Focus 1", path: "/audio/edm/focus-1.mp3" },
-      { name: "EDM Focus 2", path: "/audio/edm/focus-2.mp3" },
-      { name: "EDM Focus 3", path: "/audio/edm/focus-3.mp3" },
-    ],
-    shortBreak: [
-      { name: "EDM Break 1", path: "/audio/edm/short-break-1.mp3" },
-      { name: "EDM Break 2", path: "/audio/edm/short-break-2.mp3" },
-    ],
-    longBreak: [
-      { name: "EDM Long Break 1", path: "/audio/edm/long-break-1.mp3" },
-      { name: "EDM Long Break 2", path: "/audio/edm/long-break-2.mp3" },
-    ],
+    work: [{ name: "Adrenaline Rush", path: "/audio/edm/adrenaline-rush.mp3" }],
+    shortBreak: [{ name: "Alternating Current", path: "/audio/edm/alternating-current.mp3" }],
+    longBreak: [{ name: "Future Unseen", path: "/audio/edm/future-unseen.mp3" }],
   },
   hiphop: {
-    work: [
-      { name: "Hip-Hop Focus 1", path: "/audio/hiphop/focus-1.mp3" },
-      { name: "Hip-Hop Focus 2", path: "/audio/hiphop/focus-2.mp3" },
-      { name: "Hip-Hop Focus 3", path: "/audio/hiphop/focus-3.mp3" },
-    ],
-    shortBreak: [
-      { name: "Hip-Hop Break 1", path: "/audio/hiphop/short-break-1.mp3" },
-      { name: "Hip-Hop Break 2", path: "/audio/hiphop/short-break-2.mp3" },
-    ],
-    longBreak: [
-      { name: "Hip-Hop Long Break 1", path: "/audio/hiphop/long-break-1.mp3" },
-      { name: "Hip-Hop Long Break 2", path: "/audio/hiphop/long-break-2.mp3" },
-    ],
+    work: [{ name: "8-Bit Glitch", path: "/audio/hiphop/8-bit-glitch.mp3" }],
+    shortBreak: [{ name: "Above the Clouds", path: "/audio/hiphop/above-the-clouds.mp3" }],
+    longBreak: [{ name: "Center of Attention", path: "/audio/hiphop/center-of-attention.mp3" }],
   },
 };
 
@@ -372,3 +341,4 @@ export function useTimer() {
   }
   return context;
 }
+

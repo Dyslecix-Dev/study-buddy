@@ -27,7 +27,7 @@ export default function FloatingTimer() {
     toggleLoop,
     seekAudio,
   } = useTimer();
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
 
   // Don't show on focus page or login/signup pages
   if (pathname?.startsWith("/focus") || pathname?.startsWith("/login") || pathname?.startsWith("/signup") || pathname === "/") {
@@ -237,7 +237,9 @@ export default function FloatingTimer() {
                   onChange={(e) => seekAudio(Number(e.target.value))}
                   className="w-full h-1 rounded-lg appearance-none cursor-pointer"
                   style={{
-                    background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${(audioProgress / (audioDuration || 1)) * 100}%, var(--border) ${(audioProgress / (audioDuration || 1)) * 100}%, var(--border) 100%)`,
+                    background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${(audioProgress / (audioDuration || 1)) * 100}%, var(--border) ${
+                      (audioProgress / (audioDuration || 1)) * 100
+                    }%, var(--border) 100%)`,
                   }}
                 />
               </div>
@@ -306,3 +308,4 @@ export default function FloatingTimer() {
     </div>
   );
 }
+

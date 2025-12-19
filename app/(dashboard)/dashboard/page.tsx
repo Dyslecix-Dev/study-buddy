@@ -114,7 +114,7 @@ export default async function DashboardPage() {
               <p className="mb-3" style={{ color: "var(--text-secondary)" }}>
                 Capture your thoughts, ideas, and study materials in one organized place. Create your first note to begin building your knowledge base.
               </p>
-              <Link href="/notes/new" className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all" style={{ backgroundColor: "var(--primary)", color: "#1a1a1a" }}>
+              <Link href="/notes" className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all" style={{ backgroundColor: "var(--primary)", color: "#1a1a1a" }}>
                 Create Your First Note
               </Link>
             </div>

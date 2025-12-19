@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Check, X as XIcon, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Flashcard from "./flashcard";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
