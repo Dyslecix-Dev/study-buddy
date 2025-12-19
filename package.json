@@ -2,6 +2,7 @@
   "name": "study-buddy",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -12,7 +13,8 @@
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^5.2.2",
-    "@prisma/client": "^6.19.1",
+    "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.88.0",
     "@tailwindcss/typography": "^0.5.19",
@@ -29,6 +31,7 @@
     "fuse.js": "^7.1.0",
     "lucide-react": "^0.561.0",
     "next": "16.0.10",
+    "pg": "^8.16.3",
     "react": "19.2.1",
     "react-big-calendar": "^1.19.4",
     "react-dom": "19.2.1",
@@ -40,15 +43,16 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-big-calendar": "^1.16.3",
     "@types/react-dom": "^19",
+    "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
-    "prisma": "^6.19.1",
+    "prisma": "^7.2.0",
     "shadcn": "^3.6.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
 }
-

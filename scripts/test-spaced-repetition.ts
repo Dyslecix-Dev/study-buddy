@@ -32,7 +32,7 @@ console.log('\nAfter rating "Good" (3):', {
   interval: card.interval,
   repetitions: card.repetitions,
   easeFactor: card.easeFactor.toFixed(2),
-  nextReview: card.nextReview.toISOString().split('T')[0],
+  nextReview: card.nextReview?.toISOString().split('T')[0] ?? 'N/A',
 })
 
 // Second review - Good
@@ -41,7 +41,7 @@ console.log('\nAfter rating "Good" (3) again:', {
   interval: card.interval,
   repetitions: card.repetitions,
   easeFactor: card.easeFactor.toFixed(2),
-  nextReview: card.nextReview.toISOString().split('T')[0],
+  nextReview: card.nextReview?.toISOString().split('T')[0] ?? 'N/A',
 })
 
 // Third review - Easy
@@ -50,7 +50,7 @@ console.log('\nAfter rating "Easy" (5):', {
   interval: card.interval,
   repetitions: card.repetitions,
   easeFactor: card.easeFactor.toFixed(2),
-  nextReview: card.nextReview.toISOString().split('T')[0],
+  nextReview: card.nextReview?.toISOString().split('T')[0] ?? 'N/A',
 })
 
 // Fourth review - Good
@@ -59,7 +59,7 @@ console.log('\nAfter rating "Good" (3):', {
   interval: card.interval,
   repetitions: card.repetitions,
   easeFactor: card.easeFactor.toFixed(2),
-  nextReview: card.nextReview.toISOString().split('T')[0],
+  nextReview: card.nextReview?.toISOString().split('T')[0] ?? 'N/A',
 })
 
 // Test 2: Forgetting a mature card
@@ -79,7 +79,7 @@ console.log('\nAfter rating "Wrong" (0):', {
   interval: matureCard.interval,
   repetitions: matureCard.repetitions,
   easeFactor: matureCard.easeFactor.toFixed(2),
-  nextReview: matureCard.nextReview.toISOString().split('T')[0],
+  nextReview: matureCard.nextReview?.toISOString().split('T')[0] ?? 'N/A',
 })
 
 // Test 3: Rating mapping

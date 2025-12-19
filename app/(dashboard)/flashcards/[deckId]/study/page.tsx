@@ -46,6 +46,36 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
     }
   }, [deckId]);
 
+  // Reset card count when deck or filter changes
+  useEffect(() => {
+    if (deck) {
+      const filteredCards = deck.Flashcard.filter((card) => {
+        if (filterParam === "all") return true;
+        if (filterParam === "new") {
+          return card.repetitions === 0 && card.lastReviewed === null;
+        }
+        if (filterParam === "due") {
+          const isDue = isDueForReview(card.nextReview);
+          const isRelearning = card.repetitions === 0 && card.lastReviewed !== null;
+          const isLaterToday = card.nextReview && !isDue && Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 1;
+          return isDue || isRelearning || isLaterToday;
+        }
+        if (filterParam === "week") {
+          if (!card.nextReview || isDueForReview(card.nextReview)) return false;
+          const daysUntil = Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          return daysUntil > 1 && daysUntil <= 7;
+        }
+        if (filterParam === "month") {
+          if (!card.nextReview || isDueForReview(card.nextReview)) return false;
+          const daysUntil = Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          return daysUntil > 7 && daysUntil <= 30;
+        }
+        return true;
+      });
+      setCardCount(Math.min(5, filteredCards.length));
+    }
+  }, [deck, filterParam]);
+
   const checkAuth = async () => {
     const supabase = createClient();
     const {
@@ -116,7 +146,9 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
     return true;
   });
 
-  const selectedCards = filteredCards.slice(0, cardCount);
+  // Cap the card count at the number of available filtered cards
+  const effectiveCardCount = Math.min(cardCount, filteredCards.length);
+  const selectedCards = filteredCards.slice(0, effectiveCardCount);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
@@ -179,17 +211,17 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
 
             <div className="mb-6">
               <label className="block text-sm font-medium mb-2" style={{ color: "var(--text-primary)" }}>
-                Number of cards: {cardCount}
+                Number of cards: {effectiveCardCount}
               </label>
               <input
                 type="range"
                 min="1"
                 max={filteredCards.length}
-                value={Math.min(cardCount, filteredCards.length)}
+                value={effectiveCardCount}
                 onChange={(e) => setCardCount(parseInt(e.target.value))}
                 className="w-full h-2 rounded-lg appearance-none cursor-pointer"
                 style={{
-                  background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${((Math.min(cardCount, filteredCards.length) - 1) / (filteredCards.length - 1)) * 100}%, var(--border) ${((Math.min(cardCount, filteredCards.length) - 1) / (filteredCards.length - 1)) * 100}%, var(--border) 100%)`,
+                  background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${((effectiveCardCount - 1) / (filteredCards.length - 1)) * 100}%, var(--border) ${((effectiveCardCount - 1) / (filteredCards.length - 1)) * 100}%, var(--border) 100%)`,
                 }}
               />
               <div className="flex justify-between text-xs mt-2" style={{ color: "var(--text-muted)" }}>
@@ -200,7 +232,7 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
 
             <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: "var(--surface-secondary)" }}>
               <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                You will study <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{cardCount}</span> out of{" "}
+                You will study <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{effectiveCardCount}</span> out of{" "}
                 <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{filteredCards.length}</span> available {filterParam !== "all" ? filterParam : ""} flashcards.
               </p>
             </div>
