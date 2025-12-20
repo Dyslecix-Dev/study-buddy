@@ -81,9 +81,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     // Handle tag updates
     let removedTagIds: string[] = []
     if (tagIds !== undefined) {
-      // Get current tags before update to determine which were removed
-      const currentTags = existingTask.Tag || []
-      const currentTagIds = await prisma.task.findUnique({
+      // Get current tags to determine which were removed
+      const taskWithTags = await prisma.task.findUnique({
         where: { id },
         select: {
           Tag: {
@@ -92,8 +91,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         },
       })
 
-      if (currentTagIds) {
-        const currentIds = currentTagIds.Tag.map(t => t.id)
+      if (taskWithTags) {
+        const currentIds = taskWithTags.Tag.map(t => t.id)
         removedTagIds = currentIds.filter(tagId => !tagIds.includes(tagId))
       }
 

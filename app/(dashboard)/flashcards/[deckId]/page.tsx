@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import DashboardNav from "@/components/dashboard-nav";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { Plus, Trash2, Edit2, Play, Clock, FileText } from "lucide-react";
 import FlashcardForm from "@/components/flashcards/flashcard-form";
 import { toast } from "sonner";
@@ -284,8 +285,9 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
-        <p style={{ color: "var(--text-secondary)" }}>Loading deck...</p>
+      <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+        <DashboardNav />
+        <LoadingSpinner message="Loading deck..." />
       </div>
     );
   }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Editor from "@/components/editor/editor";
 import DashboardNav from "@/components/dashboard-nav";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { Trash2, Check } from "lucide-react";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 import { toast } from "sonner";
@@ -136,8 +137,9 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
-        <div style={{ color: "var(--text-secondary)" }}>Loading...</div>
+      <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+        <DashboardNav />
+        <LoadingSpinner message="Loading note..." />
       </div>
     );
   }

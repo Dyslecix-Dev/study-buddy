@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import DashboardNav from "@/components/dashboard-nav";
 import CalendarView from "@/components/calendar/calendar-view";
 import EventDetail from "@/components/calendar/event-detail";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { toast } from "sonner";
 import { Tag } from "@/lib/tag-utils";
 
@@ -92,8 +93,9 @@ export default function CalendarPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
-        <p style={{ color: "var(--text-secondary)" }}>Loading calendar...</p>
+      <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+        <DashboardNav />
+        <LoadingSpinner message="Loading calendar..." />
       </div>
     );
   }

@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import DashboardNav from "@/components/dashboard-nav";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { Plus, FileText, Edit2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
@@ -145,8 +146,9 @@ export default function FolderDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
-        <p style={{ color: "var(--text-secondary)" }}>Loading folder...</p>
+      <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+        <DashboardNav />
+        <LoadingSpinner message="Loading folder..." />
       </div>
     );
   }

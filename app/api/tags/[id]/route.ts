@@ -30,9 +30,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           where: { userId: user.id },
           select: { id: true, title: true },
         },
-        Deck: {
-          where: { userId: user.id },
-          select: { id: true, name: true },
+        Flashcard: {
+          select: { id: true, front: true, deckId: true },
         },
       },
     })

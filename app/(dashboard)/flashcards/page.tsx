@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import DashboardNav from "@/components/dashboard-nav";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { Plus } from "lucide-react";
 import DeckList from "@/components/flashcards/deck-list";
 import { toast } from "sonner";
@@ -181,8 +182,9 @@ export default function FlashcardsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
-        <p style={{ color: "var(--text-secondary)" }}>Loading decks...</p>
+      <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+        <DashboardNav />
+        <LoadingSpinner message="Loading decks..." />
       </div>
     );
   }

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import DashboardNav from "@/components/dashboard-nav";
+import { LoadingSpinner } from "@/components/loading-spinner";
 import { Plus } from "lucide-react";
 import TaskForm from "@/components/tasks/task-form";
 import TaskList from "@/components/tasks/task-list";
@@ -200,8 +201,9 @@ export default function TasksPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
-        <p style={{ color: "var(--text-secondary)" }}>Loading tasks...</p>
+      <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+        <DashboardNav />
+        <LoadingSpinner message="Loading tasks..." />
       </div>
     );
   }

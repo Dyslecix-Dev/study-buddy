@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { FileText, CheckSquare, Brain, Calendar } from "lucide-react";
 import DashboardNav from "@/components/dashboard-nav";
+import { ProgressDashboard } from "@/components/dashboard/progress-dashboard";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -35,6 +36,9 @@ export default async function DashboardPage() {
     },
   });
 
+  // Check if user has any activity (to determine if we should show the progress dashboard)
+  const hasActivity = noteCount > 0 || taskCount > 0 || flashcardCount > 0;
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
       <DashboardNav />
@@ -44,8 +48,17 @@ export default async function DashboardPage() {
           <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
             Welcome back, {user.email?.split("@")[0]}!
           </h1>
-          <p style={{ color: "var(--text-secondary)" }}>Here's what you can do today</p>
+          <p style={{ color: "var(--text-secondary)" }}>
+            {hasActivity ? "Here's your progress overview" : "Here's what you can do today"}
+          </p>
         </div>
+
+        {/* Show Progress Dashboard if user has activity */}
+        {hasActivity && (
+          <div className="mb-8">
+            <ProgressDashboard />
+          </div>
+        )}
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <Link href="/notes" className="shadow rounded-lg p-6 hover:shadow-lg transition-all duration-300" style={{ backgroundColor: "var(--surface)" }}>
