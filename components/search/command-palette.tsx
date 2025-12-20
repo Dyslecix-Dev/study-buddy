@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
 import Fuse from "fuse.js";
-import { FileText, CheckSquare, Brain, X, Folder, Library } from "lucide-react";
+import { FileText, CheckSquare, Brain, X, Folder, Library, Hash } from "lucide-react";
+import { Tag } from "@/lib/tag-utils";
+import TagBadge from "@/components/tags/tag-badge";
 
 interface Folder {
   id: string;
@@ -18,6 +20,7 @@ interface Note {
   title: string;
   content: any;
   folderId: string | null;
+  Tag?: Tag[];
 }
 
 interface Task {
@@ -27,12 +30,14 @@ interface Task {
   dueDate: Date | null;
   priority: number;
   completed: boolean;
+  Tag?: Tag[];
 }
 
 interface Flashcard {
   id: string;
   front: string;
   back: string;
+  Tag?: Tag[];
 }
 
 interface Deck {
@@ -41,11 +46,20 @@ interface Deck {
   Flashcard: Flashcard[];
 }
 
+interface TagWithCount extends Tag {
+  _count?: {
+    Note: number;
+    Task: number;
+    Flashcard: number;
+  };
+}
+
 interface SearchData {
   folders: Folder[];
   notes: Note[];
   tasks: Task[];
   decks: Deck[];
+  tags: TagWithCount[];
 }
 
 export default function CommandPalette() {
@@ -127,6 +141,8 @@ export default function CommandPalette() {
       title: note.title,
       content: extractTextFromContent(note.content),
       url: note.folderId ? `/notes/${note.folderId}/edit/${note.id}` : `/notes/${note.id}`,
+      tags: note.Tag || [],
+      tagNames: note.Tag?.map((tag) => tag.name).join(" ") || "",
     }));
 
     const taskItems = searchData.tasks.map((task) => ({
@@ -136,6 +152,8 @@ export default function CommandPalette() {
       content: task.description || "",
       url: `/tasks`,
       completed: task.completed,
+      tags: task.Tag || [],
+      tagNames: task.Tag?.map((tag) => tag.name).join(" ") || "",
     }));
 
     const deckItems = searchData.decks.map((deck) => ({
@@ -154,6 +172,8 @@ export default function CommandPalette() {
       url: string;
       deckId: string;
       deckName: string;
+      tags: Tag[];
+      tagNames: string;
     }> = [];
 
     searchData.decks.forEach((deck) => {
@@ -166,15 +186,29 @@ export default function CommandPalette() {
           url: `/flashcards/${deck.id}`,
           deckId: deck.id,
           deckName: deck.name,
+          tags: card.Tag || [],
+          tagNames: card.Tag?.map((tag) => tag.name).join(" ") || "",
         });
       });
     });
 
-    const allItems = [...folderItems, ...noteItems, ...taskItems, ...deckItems, ...flashcardItems];
+    const tagItems = searchData.tags.map((tag) => {
+      const totalCount = (tag._count?.Note || 0) + (tag._count?.Task || 0) + (tag._count?.Flashcard || 0);
+      return {
+        type: "tag" as const,
+        id: tag.id,
+        title: tag.name,
+        content: `Used in ${totalCount} items`,
+        url: `/tags`,
+        color: tag.color,
+      };
+    });
 
-    // Fuzzy search with Fuse.js
+    const allItems = [...folderItems, ...noteItems, ...taskItems, ...deckItems, ...flashcardItems, ...tagItems];
+
+    // Fuzzy search with Fuse.js - include tagNames in search keys
     const fuse = new Fuse(allItems, {
-      keys: ["title", "content"],
+      keys: ["title", "content", "tagNames"],
       threshold: 0.3,
       includeScore: true,
     });
@@ -202,7 +236,7 @@ export default function CommandPalette() {
             <Command.Input
               value={search}
               onValueChange={setSearch}
-              placeholder="Search folders, notes, tasks, decks, and flashcards..."
+              placeholder="Search folders, notes, tasks, decks, flashcards, and tags..."
               className="flex h-12 w-full rounded-md bg-transparent py-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50"
               style={{ color: "var(--text-primary)", caretColor: "var(--text-primary)" }}
             />
@@ -235,6 +269,7 @@ export default function CommandPalette() {
             {!loading &&
               results.map((item) => {
                 const contentPreview = item.content.length > 60 ? item.content.substring(0, 60) + "..." : item.content;
+                const itemTags = "tags" in item ? item.tags : [];
 
                 return (
                   <Command.Item
@@ -272,6 +307,11 @@ export default function CommandPalette() {
                           <Brain size={16} style={{ color: "#9333ea" }} />
                         </div>
                       )}
+                      {item.type === "tag" && (
+                        <div className="p-2 rounded" style={{ backgroundColor: "#fef2f2" }}>
+                          <Hash size={16} style={{ color: "#dc2626" }} />
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm truncate" style={{ color: "var(--text-primary)" }}>
@@ -280,6 +320,18 @@ export default function CommandPalette() {
                       <div className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
                         {item.type === "flashcard" && "deckName" in item ? `${item.deckName} • ${contentPreview}` : contentPreview}
                       </div>
+                      {itemTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {itemTags.slice(0, 3).map((tag) => (
+                            <TagBadge key={tag.id} tag={tag} size="sm" />
+                          ))}
+                          {itemTags.length > 3 && (
+                            <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                              +{itemTags.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="text-xs flex-shrink-0" style={{ color: "var(--text-muted)" }}>
                       {item.type === "folder" && "Folder"}
@@ -287,6 +339,7 @@ export default function CommandPalette() {
                       {item.type === "task" && "Task"}
                       {item.type === "deck" && "Deck"}
                       {item.type === "flashcard" && "Flashcard"}
+                      {item.type === "tag" && "Tag"}
                     </div>
                   </Command.Item>
                 );

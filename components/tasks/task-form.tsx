@@ -5,16 +5,19 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { taskSchema, TaskFormData } from "@/lib/validations/task";
 import { X } from "lucide-react";
+import { Tag } from "@/lib/tag-utils";
+import TagInput from "@/components/tags/tag-input";
 
 interface TaskFormProps {
-  onSubmit: (data: TaskFormData) => Promise<void>;
+  onSubmit: (data: TaskFormData & { tagIds?: string[] }) => Promise<void>;
   onCancel: () => void;
-  initialData?: TaskFormData;
+  initialData?: TaskFormData & { Tag?: Tag[] };
   isEdit?: boolean;
 }
 
 export default function TaskForm({ onSubmit, onCancel, initialData, isEdit = false }: TaskFormProps) {
   const [loading, setLoading] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<Tag[]>(initialData?.Tag || []);
 
   const {
     register,
@@ -33,7 +36,10 @@ export default function TaskForm({ onSubmit, onCancel, initialData, isEdit = fal
   const onSubmitForm = async (data: TaskFormData) => {
     setLoading(true);
     try {
-      await onSubmit(data);
+      await onSubmit({
+        ...data,
+        tagIds: selectedTags.map((tag) => tag.id),
+      });
     } finally {
       setLoading(false);
     }
@@ -90,7 +96,7 @@ export default function TaskForm({ onSubmit, onCancel, initialData, isEdit = fal
               {...register("dueDate")}
               id="dueDate"
               type="date"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               style={{ color: "var(--text-secondary)" }}
             />
             {errors.dueDate && <p className="mt-1 text-sm text-red-600">{errors.dueDate.message}</p>}
@@ -103,7 +109,7 @@ export default function TaskForm({ onSubmit, onCancel, initialData, isEdit = fal
             <select
               {...register("priority", { valueAsNumber: true })}
               id="priority"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               style={{ color: "var(--text-secondary)" }}
             >
               <option value={0}>Low</option>
@@ -112,6 +118,13 @@ export default function TaskForm({ onSubmit, onCancel, initialData, isEdit = fal
             </select>
             {errors.priority && <p className="mt-1 text-sm text-red-600">{errors.priority.message}</p>}
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
+            Tags
+          </label>
+          <TagInput selectedTags={selectedTags} onTagsChange={setSelectedTags} placeholder="Add tags to organize..." />
         </div>
 
         <div className="flex justify-end gap-3 pt-2">

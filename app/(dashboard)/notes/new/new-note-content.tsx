@@ -8,6 +8,8 @@ import DashboardNav from "@/components/dashboard-nav";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
+import { Tag } from "@/lib/tag-utils";
+import TagInput from "@/components/tags/tag-input";
 
 export default function NewNotePageContent() {
   const router = useRouter();
@@ -15,15 +17,16 @@ export default function NewNotePageContent() {
   const folderId = searchParams.get("folderId");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("<p></p>");
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [saving, setSaving] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Track if user has made any changes
   useEffect(() => {
-    const hasChanges = title.trim() !== "" || content !== "<p></p>";
+    const hasChanges = title.trim() !== "" || content !== "<p></p>" || selectedTags.length > 0;
     setHasUnsavedChanges(hasChanges);
-  }, [title, content]);
+  }, [title, content, selectedTags]);
 
   // Warn user before leaving page with unsaved changes
   useEffect(() => {
@@ -50,7 +53,12 @@ export default function NewNotePageContent() {
       const response = await fetch("/api/notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, folderId }),
+        body: JSON.stringify({
+          title,
+          content,
+          folderId,
+          tagIds: selectedTags.map((tag) => tag.id),
+        }),
       });
 
       if (!response.ok) {
@@ -130,6 +138,13 @@ export default function NewNotePageContent() {
               caretColor: "var(--text-primary)",
             }}
           />
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-sm font-medium mb-2" style={{ color: "var(--text-secondary)" }}>
+            Tags
+          </label>
+          <TagInput selectedTags={selectedTags} onTagsChange={setSelectedTags} placeholder="Add tags to organize..." />
         </div>
 
         <Editor content={content} onChange={setContent} placeholder="Start writing your note..." />

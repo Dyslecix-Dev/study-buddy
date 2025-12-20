@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import DashboardNav from "@/components/dashboard-nav";
-import { Plus, Trash2, Edit2, Play, Clock } from "lucide-react";
+import { Plus, Trash2, Edit2, Play, Clock, FileText } from "lucide-react";
 import FlashcardForm from "@/components/flashcards/flashcard-form";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 import { isDueForReview, getIntervalDescription } from "@/lib/spaced-repetition";
+import { Tag } from "@/lib/tag-utils";
+import TagBadge from "@/components/tags/tag-badge";
+import TagFilter from "@/components/tags/tag-filter";
 
 interface Flashcard {
   id: string;
@@ -21,6 +24,7 @@ interface Flashcard {
   repetitions: number;
   nextReview: Date | null;
   lastReviewed: Date | null;
+  Tag?: Tag[];
 }
 
 interface Deck {
@@ -28,6 +32,38 @@ interface Deck {
   name: string;
   description: string | null;
   Flashcard: Flashcard[];
+}
+
+// Helper function to filter cards by status
+function filterByStatus(card: Flashcard, filterStatus: string) {
+  if (filterStatus === "all") return true;
+  if (filterStatus === "new") {
+    return card.repetitions === 0 && card.lastReviewed === null;
+  }
+  if (filterStatus === "due") {
+    const isDue = isDueForReview(card.nextReview);
+    const isRelearning = card.repetitions === 0 && card.lastReviewed !== null;
+    const isLaterToday = card.nextReview && !isDue && Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 1;
+    return isDue || isRelearning || isLaterToday;
+  }
+  if (filterStatus === "week") {
+    if (!card.nextReview || isDueForReview(card.nextReview)) return false;
+    const daysUntil = Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntil > 1 && daysUntil <= 7;
+  }
+  if (filterStatus === "month") {
+    if (!card.nextReview || isDueForReview(card.nextReview)) return false;
+    const daysUntil = Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntil > 7 && daysUntil <= 30;
+  }
+  return true;
+}
+
+// Helper function to filter cards by tags
+function filterByTags(card: Flashcard, tagFilter: string[]) {
+  if (tagFilter.length === 0) return true;
+  if (!card.Tag || card.Tag.length === 0) return false;
+  return tagFilter.some((tagId) => card.Tag!.some((tag) => tag.id === tagId));
 }
 
 // Helper function to get card status and colors
@@ -125,6 +161,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
   const [editingCard, setEditingCard] = useState<Flashcard | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
 
   useEffect(() => {
     checkAuth();
@@ -298,27 +335,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
               {(() => {
                 // Calculate filtered cards count
                 const filteredCards = deck.Flashcard.filter((card) => {
-                  if (filterStatus === "all") return true;
-                  if (filterStatus === "new") {
-                    return card.repetitions === 0 && card.lastReviewed === null;
-                  }
-                  if (filterStatus === "due") {
-                    const isDue = isDueForReview(card.nextReview);
-                    const isRelearning = card.repetitions === 0 && card.lastReviewed !== null;
-                    const isLaterToday = card.nextReview && !isDue && Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 1;
-                    return isDue || isRelearning || isLaterToday;
-                  }
-                  if (filterStatus === "week") {
-                    if (!card.nextReview || isDueForReview(card.nextReview)) return false;
-                    const daysUntil = Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                    return daysUntil > 1 && daysUntil <= 7;
-                  }
-                  if (filterStatus === "month") {
-                    if (!card.nextReview || isDueForReview(card.nextReview)) return false;
-                    const daysUntil = Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                    return daysUntil > 7 && daysUntil <= 30;
-                  }
-                  return true;
+                  return filterByStatus(card, filterStatus) && filterByTags(card, tagFilter);
                 });
 
                 const hasCards = filteredCards.length > 0;
@@ -434,6 +451,11 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
                   <span style={{ color: "var(--text-secondary)" }}>This Month</span>
                 </div>
               </div>
+
+              {/* Tag Filter */}
+              <div className="mt-3">
+                <TagFilter selectedTagIds={tagFilter} onTagsChange={setTagFilter} label="Filter by tags" />
+              </div>
             </div>
           )}
         </div>
@@ -451,6 +473,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
         {/* Flashcards Grid */}
         {deck.Flashcard.length === 0 ? (
           <div className="text-center py-12 rounded-lg shadow" style={{ backgroundColor: "var(--surface)" }}>
+            <FileText className="mx-auto h-12 w-12" style={{ color: "var(--text-muted)" }} />
             <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
               No flashcards in this deck yet.
             </p>
@@ -467,27 +490,7 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {deck.Flashcard.filter((card) => {
-              if (filterStatus === "all") return true;
-              if (filterStatus === "new") {
-                return card.repetitions === 0 && card.lastReviewed === null;
-              }
-              if (filterStatus === "due") {
-                const isDue = isDueForReview(card.nextReview);
-                const isRelearning = card.repetitions === 0 && card.lastReviewed !== null;
-                const isLaterToday = card.nextReview && !isDue && Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) <= 1;
-                return isDue || isRelearning || isLaterToday;
-              }
-              if (filterStatus === "week") {
-                if (!card.nextReview || isDueForReview(card.nextReview)) return false;
-                const daysUntil = Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                return daysUntil > 1 && daysUntil <= 7;
-              }
-              if (filterStatus === "month") {
-                if (!card.nextReview || isDueForReview(card.nextReview)) return false;
-                const daysUntil = Math.ceil((new Date(card.nextReview).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                return daysUntil > 7 && daysUntil <= 30;
-              }
-              return true;
+              return filterByStatus(card, filterStatus) && filterByTags(card, tagFilter);
             }).map((card) => {
               const status = getCardStatus(card);
               return (
@@ -543,12 +546,19 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
                       </p>
                       <p className="text-sm text-black line-clamp-3">{card.front}</p>
                     </div>
-                    <div>
+                    <div className="mb-3">
                       <p className="text-xs mb-1 uppercase font-semibold" style={{ color: status.color }}>
                         Back
                       </p>
                       <p className="text-sm text-black line-clamp-3">{card.back}</p>
                     </div>
+                    {card.Tag && card.Tag.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {card.Tag.map((tag) => (
+                          <TagBadge key={tag.id} tag={tag} size="sm" />
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {card.nextReview && (
                     <div className="mt-3 pt-3 border-t flex items-center gap-2" style={{ borderColor: status.borderColor }}>

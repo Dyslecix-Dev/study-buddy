@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
         content: true,
         createdAt: true,
         updatedAt: true,
+        Tag: true,
       },
     })
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { title, content, folderId } = await request.json()
+    const { title, content, folderId, tagIds } = await request.json()
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -61,6 +62,12 @@ export async function POST(request: NextRequest) {
         content: content || '<p></p>',
         userId: user.id,
         folderId: folderId || null,
+        Tag: tagIds && tagIds.length > 0 ? {
+          connect: tagIds.map((id: string) => ({ id })),
+        } : undefined,
+      },
+      include: {
+        Tag: true,
       },
     })
 

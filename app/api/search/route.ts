@@ -14,8 +14,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch folders, notes, tasks, and flashcards in parallel
-    const [folders, notes, tasks, decks] = await Promise.all([
+    // Fetch folders, notes, tasks, flashcards, and tags in parallel
+    const [folders, notes, tasks, decks, tags] = await Promise.all([
       prisma.folder.findMany({
         where: { userId: user.id },
         select: {
@@ -34,6 +34,13 @@ export async function GET() {
           folderId: true,
           createdAt: true,
           updatedAt: true,
+          Tag: {
+            select: {
+              id: true,
+              name: true,
+              color: true,
+            },
+          },
         },
       }),
       prisma.task.findMany({
@@ -45,6 +52,13 @@ export async function GET() {
           completed: true,
           dueDate: true,
           priority: true,
+          Tag: {
+            select: {
+              id: true,
+              name: true,
+              color: true,
+            },
+          },
         },
       }),
       prisma.deck.findMany({
@@ -55,6 +69,28 @@ export async function GET() {
               id: true,
               front: true,
               back: true,
+              Tag: {
+                select: {
+                  id: true,
+                  name: true,
+                  color: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      prisma.tag.findMany({
+        where: { userId: user.id },
+        select: {
+          id: true,
+          name: true,
+          color: true,
+          _count: {
+            select: {
+              Note: true,
+              Task: true,
+              Flashcard: true,
             },
           },
         },
@@ -66,6 +102,7 @@ export async function GET() {
       notes,
       tasks,
       decks,
+      tags,
     })
   } catch (error) {
     console.error('Error fetching search data:', error)

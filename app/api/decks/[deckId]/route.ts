@@ -29,6 +29,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
       include: {
         Flashcard: {
           orderBy: { createdAt: 'asc' },
+          include: {
+            Tag: true,
+          },
         },
         _count: {
           select: { Flashcard: true },

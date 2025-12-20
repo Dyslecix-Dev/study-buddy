@@ -4,6 +4,8 @@ import { useState } from "react";
 import { GripVertical, Trash2, Calendar, Edit2 } from "lucide-react";
 import { format } from "date-fns";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
+import TagBadge from "@/components/tags/tag-badge";
+import { Tag } from "@/lib/tag-utils";
 
 interface Task {
   id: string;
@@ -13,6 +15,7 @@ interface Task {
   dueDate: Date | null;
   priority: number;
   order: number;
+  Tag?: Tag[];
 }
 
 interface TaskItemProps {
@@ -131,11 +134,7 @@ export default function TaskItem({ task, onToggleComplete, onDelete, onEdit, dra
             </div>
           </div>
 
-          <div className="flex items-center gap-3 mt-2">
-            <span className={`text-xs px-2 py-1 rounded-full font-medium ${priorityBadgeColors[task.priority as keyof typeof priorityBadgeColors]}`}>
-              {priorityLabels[task.priority as keyof typeof priorityLabels]}
-            </span>
-
+          <div className="flex flex-wrap items-center gap-2 mt-2">
             {task.dueDate && (
               <div className="flex items-center gap-1 text-xs" style={{ color: isOverdue ? "#dc2626" : "var(--text-secondary)" }}>
                 <Calendar size={12} />
@@ -143,6 +142,18 @@ export default function TaskItem({ task, onToggleComplete, onDelete, onEdit, dra
                   {format(new Date(task.dueDate), "MMM d, yyyy")}
                   {isOverdue && " (Overdue)"}
                 </span>
+              </div>
+            )}
+
+            <span className={`text-xs px-2 py-1 rounded-full font-medium ${priorityBadgeColors[task.priority as keyof typeof priorityBadgeColors]}`}>
+              {priorityLabels[task.priority as keyof typeof priorityLabels]}
+            </span>
+
+            {task.Tag && task.Tag.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {task.Tag.map((tag) => (
+                  <TagBadge key={tag.id} tag={tag} size="sm" />
+                ))}
               </div>
             )}
           </div>

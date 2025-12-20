@@ -1,15 +1,19 @@
 "use client";
 
 import { Filter } from "lucide-react";
+import TagFilter from "@/components/tags/tag-filter";
 
 interface TaskFiltersProps {
   statusFilter: string;
   priorityFilter: string;
+  tagFilter: string[];
   onStatusChange: (status: string) => void;
   onPriorityChange: (priority: string) => void;
+  onTagFilterChange: (tagIds: string[]) => void;
+  refreshKey?: number;
 }
 
-export default function TaskFilters({ statusFilter, priorityFilter, onStatusChange, onPriorityChange }: TaskFiltersProps) {
+export default function TaskFilters({ statusFilter, priorityFilter, tagFilter, onStatusChange, onPriorityChange, onTagFilterChange, refreshKey }: TaskFiltersProps) {
   return (
     <div className="rounded-lg shadow p-4 mb-6" style={{ backgroundColor: "var(--surface-secondary)", borderColor: "var(--border)" }}>
       <div className="flex items-center gap-2 mb-3">
@@ -19,7 +23,7 @@ export default function TaskFilters({ statusFilter, priorityFilter, onStatusChan
         </h3>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label htmlFor="status-filter" className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
             Status
@@ -54,8 +58,14 @@ export default function TaskFilters({ statusFilter, priorityFilter, onStatusChan
             <option value="0">Low</option>
           </select>
         </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--text-secondary)" }}>
+            Tags
+          </label>
+          <TagFilter key={refreshKey} selectedTagIds={tagFilter} onTagsChange={onTagFilterChange} label="Filter by tags" />
+        </div>
       </div>
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -8,6 +8,9 @@ import DashboardNav from "@/components/dashboard-nav";
 import { Plus, FileText, Edit2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
+import { Tag } from "@/lib/tag-utils";
+import TagBadge from "@/components/tags/tag-badge";
+import TagFilter from "@/components/tags/tag-filter";
 
 interface Note {
   id: string;
@@ -15,6 +18,7 @@ interface Note {
   content: any;
   createdAt: Date;
   updatedAt: Date;
+  Tag?: Tag[];
 }
 
 interface Folder {
@@ -32,6 +36,7 @@ export default function FolderDetailPage() {
   const [folder, setFolder] = useState<Folder | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
 
   useEffect(() => {
     checkAuth();
@@ -128,6 +133,16 @@ export default function FolderDetailPage() {
     }).format(new Date(date));
   };
 
+  // Client-side tag filtering
+  const filteredNotes = useMemo(() => {
+    if (!folder || tagFilter.length === 0) return folder?.Note || [];
+
+    return folder.Note.filter((note) => {
+      if (!note.Tag || note.Tag.length === 0) return false;
+      return tagFilter.some((tagId) => note.Tag!.some((tag) => tag.id === tagId));
+    });
+  }, [folder, tagFilter]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--background)" }}>
@@ -174,7 +189,7 @@ export default function FolderDetailPage() {
 
         <div className="flex justify-between items-start mb-8">
           <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
-            Notes ({folder.Note.length})
+            Notes ({filteredNotes.length}{tagFilter.length > 0 ? ` of ${folder.Note.length}` : ""})
           </h1>
           <Link
             href={`/notes/new?folderId=${folderId}`}
@@ -188,7 +203,11 @@ export default function FolderDetailPage() {
           </Link>
         </div>
 
-        {folder.Note.length === 0 ? (
+        <div className="mb-6">
+          <TagFilter selectedTagIds={tagFilter} onTagsChange={setTagFilter} label="Filter by tags" />
+        </div>
+
+        {filteredNotes.length === 0 && folder.Note.length === 0 ? (
           <div className="text-center py-12 rounded-lg shadow" style={{ backgroundColor: "var(--surface)" }}>
             <FileText className="mx-auto h-12 w-12" style={{ color: "var(--text-muted)" }} />
             <h3 className="mt-2 text-sm font-medium" style={{ color: "var(--text-primary)" }}>
@@ -210,9 +229,19 @@ export default function FolderDetailPage() {
               </Link>
             </div>
           </div>
+        ) : filteredNotes.length === 0 ? (
+          <div className="text-center py-12 rounded-lg shadow" style={{ backgroundColor: "var(--surface)" }}>
+            <FileText className="mx-auto h-12 w-12" style={{ color: "var(--text-muted)" }} />
+            <h3 className="mt-2 text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+              No notes match the selected tags
+            </h3>
+            <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>
+              Try adjusting your tag filters.
+            </p>
+          </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {folder.Note.map((note) => (
+            {filteredNotes.map((note) => (
               <div key={note.id} className="rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden" style={{ backgroundColor: "var(--surface)" }}>
                 <Link href={`/notes/${folderId}/edit/${note.id}`} className="block p-6">
                   <h3 className="text-lg font-semibold mb-2 truncate" style={{ color: "var(--text-primary)" }}>
@@ -221,6 +250,13 @@ export default function FolderDetailPage() {
                   <p className="text-sm mb-4 line-clamp-3" style={{ color: "var(--text-secondary)" }}>
                     {getPlainText(note.content) || "No content"}
                   </p>
+                  {note.Tag && note.Tag.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {note.Tag.map((tag) => (
+                        <TagBadge key={tag.id} tag={tag} size="sm" />
+                      ))}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-xs" style={{ color: "var(--text-muted)" }}>
                     <span>Updated</span>
                     <span>{formatDate(note.updatedAt)}</span>

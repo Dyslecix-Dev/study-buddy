@@ -1,10 +1,12 @@
 "use client";
 
-import { Calendar, dateFnsLocalizer, View } from "react-big-calendar";
+import { Calendar, dateFnsLocalizer, View, Components } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { useState } from "react";
+import { Tag } from "@/lib/tag-utils";
+import TagBadge from "@/components/tags/tag-badge";
 
 const locales = {
   "en-US": enUS,
@@ -26,6 +28,7 @@ interface Task {
   priority: number;
   completed: boolean;
   order: number;
+  Tag?: Tag[];
 }
 
 interface CalendarEvent {
@@ -56,6 +59,34 @@ export default function CalendarView({ tasks, onSelectEvent }: CalendarViewProps
       resource: task,
     }));
 
+  // Custom event component to show tags
+  const EventComponent = ({ event }: { event: CalendarEvent }) => {
+    const task = event.resource;
+    return (
+      <div className="flex flex-col gap-0.5">
+        <span className="font-medium text-xs">{event.title}</span>
+        {task.Tag && task.Tag.length > 0 && (
+          <div className="flex flex-wrap gap-0.5">
+            {task.Tag.slice(0, 2).map((tag) => (
+              <span
+                key={tag.id}
+                className="inline-block px-1 py-0.5 rounded text-[10px] font-medium"
+                style={{
+                  backgroundColor: tag.color || "#6b7280",
+                  color: "white",
+                  opacity: 0.9,
+                }}
+              >
+                {tag.name}
+              </span>
+            ))}
+            {task.Tag.length > 2 && <span className="text-[10px]">+{task.Tag.length - 2}</span>}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Style events based on priority and completion status
   const eventStyleGetter = (event: CalendarEvent) => {
     const task = event.resource;
@@ -68,7 +99,7 @@ export default function CalendarView({ tasks, onSelectEvent }: CalendarViewProps
     } else if (task.priority === 1) {
       backgroundColor = "#f59e0b"; // Medium - yellow/orange
     } else {
-      backgroundColor = "#6b7280"; // Low - gray
+      backgroundColor = "#10b981"; // Low - green (different from completed gray)
     }
 
     return {
@@ -85,7 +116,7 @@ export default function CalendarView({ tasks, onSelectEvent }: CalendarViewProps
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
+    <div className="rounded-lg shadow p-4" style={{ backgroundColor: 'var(--surface)' }}>
       <style jsx global>{`
         .rbc-calendar {
           font-family: inherit;
@@ -94,46 +125,88 @@ export default function CalendarView({ tasks, onSelectEvent }: CalendarViewProps
           padding: 10px 6px;
           font-weight: 600;
           font-size: 0.875rem;
-          color: #374151;
+          color: var(--text-primary);
+          background-color: var(--surface);
+        }
+        .rbc-month-row {
+          background-color: var(--background);
+        }
+        .rbc-day-bg {
+          background-color: var(--background);
+        }
+        .rbc-date-cell {
+          color: var(--text-primary);
         }
         .rbc-today {
-          background-color: #dbeafe;
+          background-color: var(--primary-light);
+        }
+        .rbc-off-range {
+          color: var(--text-tertiary);
         }
         .rbc-off-range-bg {
-          background-color: #f9fafb;
+          background-color: var(--surface);
         }
         .rbc-event {
           padding: 2px 5px;
         }
         .rbc-event:focus {
-          outline: 2px solid #3b82f6;
+          outline: 2px solid var(--primary);
         }
         .rbc-toolbar {
           padding: 10px 0;
           margin-bottom: 10px;
         }
         .rbc-toolbar button {
-          color: #374151;
-          border: 1px solid #d1d5db;
+          color: var(--text-primary);
+          border: 1px solid var(--border);
           padding: 6px 12px;
-          background-color: white;
+          background-color: var(--surface);
           border-radius: 6px;
           font-size: 0.875rem;
           transition: all 0.2s;
         }
         .rbc-toolbar button:hover {
-          background-color: #f3f4f6;
+          background-color: var(--surface-hover);
         }
         .rbc-toolbar button.rbc-active {
-          background-color: #3b82f6;
+          background-color: var(--primary);
           color: white;
-          border-color: #3b82f6;
+          border-color: var(--primary);
+        }
+        .rbc-toolbar-label {
+          color: var(--text-primary);
         }
         .rbc-month-view,
         .rbc-time-view,
         .rbc-agenda-view {
-          border: 1px solid #e5e7eb;
+          border: 1px solid var(--border);
           border-radius: 8px;
+          background-color: var(--background);
+        }
+        .rbc-time-header-content {
+          border-left: 1px solid var(--border);
+        }
+        .rbc-time-content {
+          border-top: 1px solid var(--border);
+        }
+        .rbc-day-slot .rbc-time-slot {
+          border-top: 1px solid var(--border);
+        }
+        .rbc-time-slot {
+          color: var(--text-secondary);
+        }
+        .rbc-label {
+          color: var(--text-secondary);
+        }
+        .rbc-agenda-view table.rbc-agenda-table {
+          border: 1px solid var(--border);
+        }
+        .rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+          color: var(--text-primary);
+        }
+        .rbc-agenda-view table.rbc-agenda-table thead > tr > th {
+          color: var(--text-primary);
+          border-bottom: 1px solid var(--border);
         }
       `}</style>
       <Calendar
@@ -149,6 +222,9 @@ export default function CalendarView({ tasks, onSelectEvent }: CalendarViewProps
         onSelectEvent={(event) => onSelectEvent(event.resource)}
         eventPropGetter={eventStyleGetter}
         views={["month", "week", "day", "agenda"]}
+        components={{
+          event: EventComponent,
+        }}
         popup
       />
     </div>

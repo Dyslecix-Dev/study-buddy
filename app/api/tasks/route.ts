@@ -33,6 +33,9 @@ export async function GET(request: NextRequest) {
     const tasks = await prisma.task.findMany({
       where,
       orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+      include: {
+        Tag: true,
+      },
     })
 
     return NextResponse.json(tasks)
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, dueDate, priority } = body
+    const { title, description, dueDate, priority, tagIds } = body
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -75,6 +78,12 @@ export async function POST(request: NextRequest) {
         priority: priority !== undefined ? priority : 0,
         order: lastTask ? lastTask.order + 1 : 0,
         userId: user.id,
+        Tag: tagIds && tagIds.length > 0 ? {
+          connect: tagIds.map((id: string) => ({ id })),
+        } : undefined,
+      },
+      include: {
+        Tag: true,
       },
     })
 

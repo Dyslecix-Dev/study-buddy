@@ -36,6 +36,9 @@ export async function GET(request: NextRequest, { params }: Params) {
     const flashcards = await prisma.flashcard.findMany({
       where: { deckId },
       orderBy: { createdAt: 'asc' },
+      include: {
+        Tag: true,
+      },
     })
 
     return NextResponse.json(flashcards)
@@ -71,7 +74,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     const body = await request.json()
-    const { front, back } = body
+    const { front, back, tagIds } = body
 
     if (!front || !back) {
       return NextResponse.json({ error: 'Front and back are required' }, { status: 400 })
@@ -82,6 +85,12 @@ export async function POST(request: NextRequest, { params }: Params) {
         front,
         back,
         deckId,
+        Tag: tagIds && tagIds.length > 0 ? {
+          connect: tagIds.map((id: string) => ({ id })),
+        } : undefined,
+      },
+      include: {
+        Tag: true,
       },
     })
 

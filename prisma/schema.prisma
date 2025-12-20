@@ -19,7 +19,6 @@ model Deck {
   updatedAt   DateTime    @updatedAt
   User        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   Flashcard   Flashcard[]
-  Tag         Tag[]
 
   @@index([userId])
 }
@@ -38,6 +37,7 @@ model Flashcard {
   updatedAt    DateTime  @updatedAt
   Deck         Deck      @relation(fields: [deckId], references: [id], onDelete: Cascade)
   Review       Review[]
+  Tag          Tag[]
 
   @@index([deckId])
   @@index([nextReview])
@@ -115,14 +115,17 @@ model StudySession {
 }
 
 model Tag {
-  id        String   @id @default(uuid())
-  name      String   @unique
+  id        String      @id @default(uuid())
+  name      String
   color     String?
-  createdAt DateTime @default(now())
-  Deck      Deck[]
+  userId    String?
+  createdAt DateTime    @default(now())
+  User      User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Flashcard Flashcard[]
   Note      Note[]
   Task      Task[]
 
+  @@index([userId])
   @@index([name])
 }
 
@@ -170,6 +173,7 @@ model User {
   FocusSession  FocusSession[]
   Note          Note[]
   StudySession  StudySession[]
+  Tag           Tag[]
   Task          Task[]
 
   @@index([email])

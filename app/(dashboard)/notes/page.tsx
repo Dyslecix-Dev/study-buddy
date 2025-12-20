@@ -231,7 +231,7 @@ export default function NotesPage() {
                   id="color"
                   value={formData.color}
                   onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2"
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 cursor-pointer"
                   style={{
                     backgroundColor: "var(--background)",
                     borderColor: "var(--border)",

@@ -8,16 +8,20 @@ import DashboardNav from "@/components/dashboard-nav";
 import { Trash2, Check } from "lucide-react";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 import { toast } from "sonner";
+import { Tag } from "@/lib/tag-utils";
+import TagInput from "@/components/tags/tag-input";
 
 export default function NoteEditorPage({ params }: { params: Promise<{ folderId: string; noteId: string }> }) {
   const { folderId, noteId } = use(params);
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("<p></p>");
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
 
   // Fetch note on mount
   useEffect(() => {
@@ -30,6 +34,7 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
         const { note } = await response.json();
         setTitle(note.title);
         setContent(note.content);
+        setSelectedTags(note.Tag || []);
       } catch (err: any) {
         toast.error(err.message || "Failed to load note");
       } finally {
@@ -39,6 +44,19 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
 
     fetchNote();
   }, [noteId]);
+
+  // Warn user before leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!saved) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [saved]);
 
   // Auto-save with debounce
   useEffect(() => {
@@ -50,7 +68,11 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
         const response = await fetch(`/api/notes/${noteId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, content }),
+          body: JSON.stringify({
+            title,
+            content,
+            tagIds: selectedTags.map(tag => tag.id),
+          }),
         });
 
         if (!response.ok) {
@@ -66,7 +88,7 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
     }, 2000); // Auto-save after 2 seconds of no changes
 
     return () => clearTimeout(timeoutId);
-  }, [title, content, noteId, loading, saved]);
+  }, [title, content, selectedTags, noteId, loading, saved]);
 
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
@@ -76,6 +98,23 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
     setSaved(false);
+  };
+
+  const handleTagsChange = (newTags: Tag[]) => {
+    setSelectedTags(newTags);
+    setSaved(false);
+  };
+
+  const handleBackClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!saved) {
+      e.preventDefault();
+      setShowUnsavedWarning(true);
+    }
+  };
+
+  const handleConfirmLeave = () => {
+    setSaved(true); // Prevent beforeunload from firing
+    router.push(`/notes/${folderId}`);
   };
 
   const handleDelete = async () => {
@@ -112,6 +151,7 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
           <div className="flex items-center space-x-4">
             <Link
               href={`/notes/${folderId}`}
+              onClick={handleBackClick}
               className="text-sm transition-colors duration-300"
               style={{ color: "var(--text-secondary)" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
@@ -150,6 +190,13 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
           />
         </div>
 
+        <div className="mb-6">
+          <label className="block text-sm font-medium mb-2" style={{ color: "var(--text-secondary)" }}>
+            Tags
+          </label>
+          <TagInput selectedTags={selectedTags} onTagsChange={handleTagsChange} placeholder="Add tags to organize..." />
+        </div>
+
         <Editor content={content} onChange={handleContentChange} placeholder="Start writing your note..." />
       </div>
 
@@ -160,7 +207,16 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
         title="Delete Note?"
         description="Are you sure you want to delete this note? This action cannot be undone."
       />
+
+      <DeleteConfirmModal
+        isOpen={showUnsavedWarning}
+        onClose={() => setShowUnsavedWarning(false)}
+        onConfirm={handleConfirmLeave}
+        title="Unsaved Changes"
+        description="You have unsaved changes. Are you sure you want to leave? Your changes will be lost."
+        confirmText="Leave Without Saving"
+        cancelText="Stay on Page"
+      />
     </div>
   );
 }
-

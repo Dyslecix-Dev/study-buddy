@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import DashboardNav from "@/components/dashboard-nav";
@@ -10,6 +10,7 @@ import TaskList from "@/components/tasks/task-list";
 import TaskFilters from "@/components/tasks/task-filters";
 import { TaskFormData } from "@/lib/validations/task";
 import { toast } from "sonner";
+import { Tag } from "@/lib/tag-utils";
 
 interface Task {
   id: string;
@@ -19,16 +20,19 @@ interface Task {
   dueDate: Date | null;
   priority: number;
   order: number;
+  Tag?: Tag[];
 }
 
 export default function TasksPage() {
   const router = useRouter();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [tagRefreshKey, setTagRefreshKey] = useState(0);
 
   useEffect(() => {
     checkAuth();
@@ -58,7 +62,8 @@ export default function TasksPage() {
       const response = await fetch(`/api/tasks?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setTasks(data);
+        setAllTasks(data);
+        setTagRefreshKey(prev => prev + 1); // Force TagFilter to refresh
       }
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -67,6 +72,16 @@ export default function TasksPage() {
       setLoading(false);
     }
   };
+
+  // Client-side tag filtering
+  const filteredTasks = useMemo(() => {
+    if (tagFilter.length === 0) return allTasks;
+
+    return allTasks.filter((task) => {
+      if (!task.Tag || task.Tag.length === 0) return false;
+      return tagFilter.some((tagId) => task.Tag!.some((tag) => tag.id === tagId));
+    });
+  }, [allTasks, tagFilter]);
 
   const handleCreateTask = async (data: TaskFormData) => {
     try {
@@ -151,7 +166,7 @@ export default function TasksPage() {
   };
 
   const handleReorder = async (reorderedTasks: Task[]) => {
-    setTasks(reorderedTasks);
+    setAllTasks(reorderedTasks);
 
     try {
       const response = await fetch("/api/tasks/reorder", {
@@ -226,6 +241,7 @@ export default function TasksPage() {
                     description: editingTask.description || "",
                     dueDate: editingTask.dueDate ? new Date(editingTask.dueDate).toISOString().split("T")[0] : "",
                     priority: editingTask.priority,
+                    Tag: editingTask.Tag,
                   }
                 : undefined
             }
@@ -233,11 +249,18 @@ export default function TasksPage() {
           />
         )}
 
-        <TaskFilters statusFilter={statusFilter} priorityFilter={priorityFilter} onStatusChange={setStatusFilter} onPriorityChange={setPriorityFilter} />
+        <TaskFilters
+          statusFilter={statusFilter}
+          priorityFilter={priorityFilter}
+          tagFilter={tagFilter}
+          onStatusChange={setStatusFilter}
+          onPriorityChange={setPriorityFilter}
+          onTagFilterChange={setTagFilter}
+          refreshKey={tagRefreshKey}
+        />
 
-        <TaskList tasks={tasks} onReorder={handleReorder} onToggleComplete={handleToggleComplete} onDelete={handleDeleteTask} onEdit={handleEdit} />
+        <TaskList tasks={filteredTasks} onReorder={handleReorder} onToggleComplete={handleToggleComplete} onDelete={handleDeleteTask} onEdit={handleEdit} />
       </div>
     </div>
   );
 }
-

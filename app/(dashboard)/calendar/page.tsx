@@ -8,6 +8,7 @@ import DashboardNav from "@/components/dashboard-nav";
 import CalendarView from "@/components/calendar/calendar-view";
 import EventDetail from "@/components/calendar/event-detail";
 import { toast } from "sonner";
+import { Tag } from "@/lib/tag-utils";
 
 interface Task {
   id: string;
@@ -17,6 +18,7 @@ interface Task {
   dueDate: Date | null;
   priority: number;
   order: number;
+  Tag?: Tag[];
 }
 
 export default function CalendarPage() {
@@ -127,7 +129,7 @@ export default function CalendarPage() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-gray-500"></div>
+              <div className="w-4 h-4 rounded bg-green-500"></div>
               <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
                 Low Priority
               </span>

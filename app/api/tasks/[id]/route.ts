@@ -26,6 +26,9 @@ export async function GET(request: NextRequest, { params }: Params) {
         id,
         userId: user.id,
       },
+      include: {
+        Tag: true,
+      },
     })
 
     if (!task) {
@@ -53,7 +56,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     const body = await request.json()
-    const { title, description, completed, dueDate, priority, order } = body
+    const { title, description, completed, dueDate, priority, order, tagIds } = body
 
     // Verify the task belongs to the user
     const existingTask = await prisma.task.findFirst({
@@ -75,10 +78,62 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (priority !== undefined) updateData.priority = priority
     if (order !== undefined) updateData.order = order
 
+    // Handle tag updates
+    let removedTagIds: string[] = []
+    if (tagIds !== undefined) {
+      // Get current tags before update to determine which were removed
+      const currentTags = existingTask.Tag || []
+      const currentTagIds = await prisma.task.findUnique({
+        where: { id },
+        select: {
+          Tag: {
+            select: { id: true },
+          },
+        },
+      })
+
+      if (currentTagIds) {
+        const currentIds = currentTagIds.Tag.map(t => t.id)
+        removedTagIds = currentIds.filter(tagId => !tagIds.includes(tagId))
+      }
+
+      updateData.Tag = {
+        set: tagIds.map((id: string) => ({ id })),
+      }
+    }
+
     const task = await prisma.task.update({
       where: { id },
       data: updateData,
+      include: {
+        Tag: true,
+      },
     })
+
+    // Clean up unused tags
+    for (const tagId of removedTagIds) {
+      const tagWithUsage = await prisma.tag.findUnique({
+        where: { id: tagId },
+        include: {
+          _count: {
+            select: {
+              Note: true,
+              Task: true,
+              Flashcard: true,
+            },
+          },
+        },
+      })
+
+      if (tagWithUsage) {
+        const totalUsage = tagWithUsage._count.Note + tagWithUsage._count.Task + tagWithUsage._count.Flashcard
+        if (totalUsage === 0) {
+          await prisma.tag.delete({
+            where: { id: tagId },
+          })
+        }
+      }
+    }
 
     return NextResponse.json(task)
   } catch (error) {
@@ -112,9 +167,46 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
+    // Get tags before deletion for cleanup
+    const taskWithTags = await prisma.task.findUnique({
+      where: { id },
+      select: {
+        Tag: {
+          select: { id: true },
+        },
+      },
+    })
+
+    const tagIds = taskWithTags?.Tag.map(t => t.id) || []
+
     await prisma.task.delete({
       where: { id },
     })
+
+    // Clean up unused tags
+    for (const tagId of tagIds) {
+      const tagWithUsage = await prisma.tag.findUnique({
+        where: { id: tagId },
+        include: {
+          _count: {
+            select: {
+              Note: true,
+              Task: true,
+              Flashcard: true,
+            },
+          },
+        },
+      })
+
+      if (tagWithUsage) {
+        const totalUsage = tagWithUsage._count.Note + tagWithUsage._count.Task + tagWithUsage._count.Flashcard
+        if (totalUsage === 0) {
+          await prisma.tag.delete({
+            where: { id: tagId },
+          })
+        }
+      }
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

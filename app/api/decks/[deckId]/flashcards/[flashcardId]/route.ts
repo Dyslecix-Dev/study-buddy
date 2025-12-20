@@ -39,6 +39,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
         id: flashcardId,
         deckId,
       },
+      include: {
+        Tag: true,
+      },
     })
 
     if (!flashcard) {
@@ -78,15 +81,68 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     const body = await request.json()
-    const { front, back } = body
+    const { front, back, tagIds } = body
+
+    const updateData: any = {
+      ...(front !== undefined && { front }),
+      ...(back !== undefined && { back }),
+    }
+
+    // Handle tag updates
+    let removedTagIds: string[] = []
+    if (tagIds !== undefined) {
+      // Get current tags before update to determine which were removed
+      const currentTagIds = await prisma.flashcard.findUnique({
+        where: { id: flashcardId },
+        select: {
+          Tag: {
+            select: { id: true },
+          },
+        },
+      })
+
+      if (currentTagIds) {
+        const currentIds = currentTagIds.Tag.map(t => t.id)
+        removedTagIds = currentIds.filter(tagId => !tagIds.includes(tagId))
+      }
+
+      updateData.Tag = {
+        set: tagIds.map((id: string) => ({ id })),
+      }
+    }
 
     const flashcard = await prisma.flashcard.update({
       where: { id: flashcardId },
-      data: {
-        ...(front !== undefined && { front }),
-        ...(back !== undefined && { back }),
+      data: updateData,
+      include: {
+        Tag: true,
       },
     })
+
+    // Clean up unused tags
+    for (const tagId of removedTagIds) {
+      const tagWithUsage = await prisma.tag.findUnique({
+        where: { id: tagId },
+        include: {
+          _count: {
+            select: {
+              Note: true,
+              Task: true,
+              Flashcard: true,
+            },
+          },
+        },
+      })
+
+      if (tagWithUsage) {
+        const totalUsage = tagWithUsage._count.Note + tagWithUsage._count.Task + tagWithUsage._count.Flashcard
+        if (totalUsage === 0) {
+          await prisma.tag.delete({
+            where: { id: tagId },
+          })
+        }
+      }
+    }
 
     return NextResponse.json(flashcard)
   } catch (error) {
@@ -120,9 +176,46 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Deck not found' }, { status: 404 })
     }
 
+    // Get tags before deletion for cleanup
+    const flashcardWithTags = await prisma.flashcard.findUnique({
+      where: { id: flashcardId },
+      select: {
+        Tag: {
+          select: { id: true },
+        },
+      },
+    })
+
+    const tagIds = flashcardWithTags?.Tag.map(t => t.id) || []
+
     await prisma.flashcard.delete({
       where: { id: flashcardId },
     })
+
+    // Clean up unused tags
+    for (const tagId of tagIds) {
+      const tagWithUsage = await prisma.tag.findUnique({
+        where: { id: tagId },
+        include: {
+          _count: {
+            select: {
+              Note: true,
+              Task: true,
+              Flashcard: true,
+            },
+          },
+        },
+      })
+
+      if (tagWithUsage) {
+        const totalUsage = tagWithUsage._count.Note + tagWithUsage._count.Task + tagWithUsage._count.Flashcard
+        if (totalUsage === 0) {
+          await prisma.tag.delete({
+            where: { id: tagId },
+          })
+        }
+      }
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

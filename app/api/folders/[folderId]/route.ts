@@ -27,6 +27,9 @@ export async function GET(request: NextRequest, { params }: { params: Params }) 
       include: {
         Note: {
           orderBy: { updatedAt: "desc" },
+          include: {
+            Tag: true,
+          },
         },
       },
     });
