@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Timer, Play, Pause, X, Maximize2, Music, SkipForward, SkipBack, Repeat } from "lucide-react";
+import { Timer, Play, Pause, X, Maximize2, Music, SkipForward, SkipBack, Repeat, Coffee, Clock } from "lucide-react";
 import { useTimer } from "@/contexts/timer-context";
 
 export default function FloatingTimer() {
@@ -13,6 +13,7 @@ export default function FloatingTimer() {
     timeLeft,
     isRunning,
     isMusicEnabled,
+    isMusicPlaying,
     musicGenre,
     isLooping,
     currentTrackName,
@@ -20,7 +21,10 @@ export default function FloatingTimer() {
     audioDuration,
     startTimer,
     pauseTimer,
+    setMode,
     toggleMusic,
+    playMusic,
+    pauseMusic,
     setMusicGenre,
     nextTrack,
     previousTrack,
@@ -132,6 +136,43 @@ export default function FloatingTimer() {
             <X size={16} />
           </button>
         </div>
+      </div>
+
+      {/* Mode Selector */}
+      <div className="flex gap-1 mb-3">
+        <button
+          onClick={() => setMode("work")}
+          className="flex-1 px-2 py-1 rounded text-xs font-medium transition-all duration-300 cursor-pointer"
+          style={{
+            backgroundColor: mode === "work" ? getModeColor() : "var(--surface-secondary)",
+            color: mode === "work" ? "white" : "var(--text-secondary)",
+          }}
+          title="Focus"
+        >
+          <Clock size={12} className="mx-auto" />
+        </button>
+        <button
+          onClick={() => setMode("shortBreak")}
+          className="flex-1 px-2 py-1 rounded text-xs font-medium transition-all duration-300 cursor-pointer"
+          style={{
+            backgroundColor: mode === "shortBreak" ? getModeColor() : "var(--surface-secondary)",
+            color: mode === "shortBreak" ? "white" : "var(--text-secondary)",
+          }}
+          title="Short Break"
+        >
+          <Coffee size={12} className="mx-auto" />
+        </button>
+        <button
+          onClick={() => setMode("longBreak")}
+          className="flex-1 px-2 py-1 rounded text-xs font-medium transition-all duration-300 cursor-pointer"
+          style={{
+            backgroundColor: mode === "longBreak" ? getModeColor() : "var(--surface-secondary)",
+            color: mode === "longBreak" ? "white" : "var(--text-secondary)",
+          }}
+          title="Long Break"
+        >
+          <Coffee size={14} className="mx-auto" />
+        </button>
       </div>
 
       {/* Timer Display */}
@@ -264,6 +305,19 @@ export default function FloatingTimer() {
                 title="Previous track"
               >
                 <SkipBack size={14} />
+              </button>
+              <button
+                onClick={isMusicPlaying ? pauseMusic : playMusic}
+                className="p-1.5 rounded transition-colors duration-300 cursor-pointer"
+                style={{
+                  backgroundColor: "var(--primary)",
+                  color: "#1a1a1a",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                title={isMusicPlaying ? "Pause music" : "Play music"}
+              >
+                {isMusicPlaying ? <Pause size={14} /> : <Play size={14} />}
               </button>
               <button
                 onClick={toggleLoop}

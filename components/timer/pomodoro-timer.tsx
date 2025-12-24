@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Play, Pause, RotateCcw, Settings as SettingsIcon, Music, SkipForward, SkipBack, Repeat } from "lucide-react";
 import { useTimer } from "@/contexts/timer-context";
 import TimerSettings from "./timer-settings";
@@ -14,6 +14,7 @@ export default function PomodoroTimer() {
     isRunning,
     sessionsCompleted,
     isMusicEnabled,
+    isMusicPlaying,
     musicGenre,
     isLooping,
     currentTrackName,
@@ -26,6 +27,8 @@ export default function PomodoroTimer() {
     setMode,
     setCustomDurations,
     toggleMusic,
+    playMusic,
+    pauseMusic,
     setMusicGenre,
     nextTrack,
     previousTrack,
@@ -294,6 +297,19 @@ export default function PomodoroTimer() {
                 title="Previous track"
               >
                 <SkipBack size={18} />
+              </button>
+              <button
+                onClick={isMusicPlaying ? pauseMusic : playMusic}
+                className="p-2.5 rounded-full transition-colors duration-300 cursor-pointer"
+                style={{
+                  backgroundColor: "var(--primary)",
+                  color: "#1a1a1a",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                title={isMusicPlaying ? "Pause music" : "Play music"}
+              >
+                {isMusicPlaying ? <Pause size={18} /> : <Play size={18} />}
               </button>
               <button
                 onClick={toggleLoop}

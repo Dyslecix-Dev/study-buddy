@@ -11,6 +11,7 @@ interface TimerContextType {
   isRunning: boolean;
   sessionsCompleted: number;
   isMusicEnabled: boolean;
+  isMusicPlaying: boolean;
   musicGenre: MusicGenre;
   currentTrackIndex: number;
   isLooping: boolean;
@@ -28,6 +29,8 @@ interface TimerContextType {
   setMode: (mode: TimerMode) => void;
   setCustomDurations: (durations: { work: number; shortBreak: number; longBreak: number }) => void;
   toggleMusic: () => void;
+  playMusic: () => void;
+  pauseMusic: () => void;
   setMusicGenre: (genre: MusicGenre) => void;
   nextTrack: () => void;
   previousTrack: () => void;
@@ -48,37 +51,178 @@ const DEFAULT_DURATIONS = {
 // TODO Add rest of music
 const MUSIC_PLAYLISTS: Record<MusicGenre, Record<TimerMode, { name: string; path: string }[]>> = {
   jazz: {
-    work: [{ name: "Down the Street", path: "/audio/jazz/down-the-street.mp3" }],
-    shortBreak: [{ name: "Downtown Boogie", path: "/audio/jazz/downtown-boogie.mp3" }],
-    longBreak: [{ name: "Moonlit Romance", path: "/audio/jazz/moonlit-romance.mp3" }],
+    work: [
+      { name: "Down the Street", path: "/audio/jazz/down-the-street.mp3" },
+      { name: "Poor Man's Waltz", path: "/audio/jazz/poor-mans-waltz.mp3" },
+    ],
+    shortBreak: [
+      { name: "Downtown Boogie", path: "/audio/jazz/downtown-boogie.mp3" },
+      { name: "Sexual Tension", path: "/audio/jazz/sexual-tension.mp3" },
+    ],
+    longBreak: [
+      { name: "Moonlit Romance", path: "/audio/jazz/moonlit-romance.mp3" },
+      { name: "Street Symphony", path: "/audio/jazz/street-symphony.mp3" },
+    ],
   },
   edm: {
-    work: [{ name: "Adrenaline Rush", path: "/audio/edm/adrenaline-rush.mp3" }],
-    shortBreak: [{ name: "Alternating Current", path: "/audio/edm/alternating-current.mp3" }],
-    longBreak: [{ name: "Future Unseen", path: "/audio/edm/future-unseen.mp3" }],
+    work: [
+      { name: "Adrenaline Rush", path: "/audio/edm/adrenaline-rush.mp3" },
+      { name: "Midnight Happy Hour", path: "/audio/edm/midnight-happy-hour.mp3" },
+    ],
+    shortBreak: [
+      { name: "Alternating Current", path: "/audio/edm/alternating-current.mp3" },
+      { name: "Mumble Rap", path: "/audio/edm/mumble-rap.mp3" },
+    ],
+    longBreak: [
+      { name: "Future Unseen", path: "/audio/edm/future-unseen.mp3" },
+      { name: "Muted Club", path: "/audio/edm/muted-club.mp3" },
+    ],
   },
   hiphop: {
-    work: [{ name: "8-Bit Glitch", path: "/audio/hiphop/8-bit-glitch.mp3" }],
-    shortBreak: [{ name: "Above the Clouds", path: "/audio/hiphop/above-the-clouds.mp3" }],
-    longBreak: [{ name: "Center of Attention", path: "/audio/hiphop/center-of-attention.mp3" }],
+    work: [
+      { name: "8-Bit Glitch", path: "/audio/hiphop/8-bit-glitch.mp3" },
+      { name: "Chamomile Dreams", path: "/audio/hiphop/chamomile-dreams.mp3" },
+    ],
+    shortBreak: [
+      { name: "Above the Clouds", path: "/audio/hiphop/above-the-clouds.mp3" },
+      { name: "Filthy Rich", path: "/audio/hiphop/filthy-rich.mp3" },
+    ],
+    longBreak: [
+      { name: "Center of Attention", path: "/audio/hiphop/center-of-attention.mp3" },
+      { name: "Forsaken and Forlorn", path: "/audio/hiphop/forsaken-and-forlorn.mp3" },
+    ],
   },
 };
 
 export function TimerProvider({ children }: { children: ReactNode }) {
-  const [mode, setModeState] = useState<TimerMode>("work");
-  const [timeLeft, setTimeLeft] = useState(DEFAULT_DURATIONS.work);
+  // Load initial state from localStorage
+  const [mode, setModeState] = useState<TimerMode>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("timerMode");
+      return (saved as TimerMode) || "work";
+    }
+    return "work";
+  });
+
+  const [customDurations, setCustomDurations] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("timerCustomDurations");
+      return saved ? JSON.parse(saved) : DEFAULT_DURATIONS;
+    }
+    return DEFAULT_DURATIONS;
+  });
+
+  const [timeLeft, setTimeLeft] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("timerTimeLeft");
+      const savedMode = localStorage.getItem("timerMode") as TimerMode;
+      const savedDurations = localStorage.getItem("timerCustomDurations");
+      const durations = savedDurations ? JSON.parse(savedDurations) : DEFAULT_DURATIONS;
+      return saved ? parseInt(saved) : durations[savedMode || "work"];
+    }
+    return DEFAULT_DURATIONS.work;
+  });
+
   const [isRunning, setIsRunning] = useState(false);
-  const [customDurations, setCustomDurations] = useState(DEFAULT_DURATIONS);
-  const [sessionsCompleted, setSessionsCompleted] = useState(0);
-  const [isMusicEnabled, setIsMusicEnabled] = useState(false);
-  const [musicGenre, setMusicGenreState] = useState<MusicGenre>("jazz");
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [isLooping, setIsLooping] = useState(false);
+
+  const [sessionsCompleted, setSessionsCompleted] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("timerSessionsCompleted");
+      return saved ? parseInt(saved) : 0;
+    }
+    return 0;
+  });
+
+  const [isMusicEnabled, setIsMusicEnabled] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("timerMusicEnabled");
+      return saved === "true";
+    }
+    return false;
+  });
+
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+
+  const [musicGenre, setMusicGenreState] = useState<MusicGenre>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("timerMusicGenre");
+      return (saved as MusicGenre) || "jazz";
+    }
+    return "jazz";
+  });
+
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("timerTrackIndex");
+      return saved ? parseInt(saved) : 0;
+    }
+    return 0;
+  });
+
+  const [isLooping, setIsLooping] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("timerIsLooping");
+      return saved === "true";
+    }
+    return false;
+  });
+
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [onSessionComplete, setOnSessionComplete] = useState<((mode: TimerMode, duration: number) => void) | undefined>();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timerCompleteRef = useRef(false);
+  const shouldAutoPlayNextTrack = useRef(false);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("timerMode", mode);
+    }
+  }, [mode]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("timerTimeLeft", timeLeft.toString());
+    }
+  }, [timeLeft]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("timerCustomDurations", JSON.stringify(customDurations));
+    }
+  }, [customDurations]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("timerSessionsCompleted", sessionsCompleted.toString());
+    }
+  }, [sessionsCompleted]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("timerMusicEnabled", isMusicEnabled.toString());
+    }
+  }, [isMusicEnabled]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("timerMusicGenre", musicGenre);
+    }
+  }, [musicGenre]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("timerTrackIndex", currentTrackIndex.toString());
+    }
+  }, [currentTrackIndex]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("timerIsLooping", isLooping.toString());
+    }
+  }, [isLooping]);
 
   // Get current playlist based on mode and genre
   const getCurrentPlaylist = useCallback(() => {
@@ -93,22 +237,11 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   const currentTrackName = getCurrentTrack().name;
 
-  // Initialize audio element
+  // Initialize audio element (only once)
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && !audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.volume = 0.3;
-
-      // Handle track end - play next track or loop current
-      const handleTrackEnd = () => {
-        if (isLooping) {
-          audioRef.current?.play();
-        } else {
-          const playlist = getCurrentPlaylist();
-          const nextIndex = (currentTrackIndex + 1) % playlist.length;
-          setCurrentTrackIndex(nextIndex);
-        }
-      };
 
       // Update progress as track plays
       const handleTimeUpdate = () => {
@@ -124,13 +257,11 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         }
       };
 
-      audioRef.current.addEventListener("ended", handleTrackEnd);
       audioRef.current.addEventListener("timeupdate", handleTimeUpdate);
       audioRef.current.addEventListener("loadedmetadata", handleLoadedMetadata);
 
       return () => {
         if (audioRef.current) {
-          audioRef.current.removeEventListener("ended", handleTrackEnd);
           audioRef.current.removeEventListener("timeupdate", handleTimeUpdate);
           audioRef.current.removeEventListener("loadedmetadata", handleLoadedMetadata);
           audioRef.current.pause();
@@ -138,14 +269,41 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         }
       };
     }
-  }, [isLooping, currentTrackIndex, getCurrentPlaylist]);
+  }, []);
 
-  // Handle music playback based on timer state, mode, genre, and track
+  // Handle track end separately - play next track or loop current
   useEffect(() => {
-    if (!audioRef.current || !isMusicEnabled) {
-      if (audioRef.current) {
-        audioRef.current.pause();
+    if (!audioRef.current) return;
+
+    const handleTrackEnd = () => {
+      if (isLooping) {
+        // Loop current track
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+          audioRef.current.play();
+        }
+      } else if (isMusicEnabled) {
+        // Mark that we should auto-play the next track
+        shouldAutoPlayNextTrack.current = true;
+        // Move to next track
+        const playlist = getCurrentPlaylist();
+        const nextIndex = (currentTrackIndex + 1) % playlist.length;
+        setCurrentTrackIndex(nextIndex);
       }
+    };
+
+    audioRef.current.addEventListener("ended", handleTrackEnd);
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.removeEventListener("ended", handleTrackEnd);
+      }
+    };
+  }, [isLooping, currentTrackIndex, getCurrentPlaylist, isMusicEnabled]);
+
+  // Handle track changes - update audio source when track, mode, or genre changes
+  useEffect(() => {
+    if (!audioRef.current) {
       return;
     }
 
@@ -155,21 +313,62 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
     // If the track has changed, update the source
     if (audio.src !== window.location.origin + trackPath) {
+      const shouldAutoPlay = shouldAutoPlayNextTrack.current || isMusicPlaying || (!audio.paused && isMusicEnabled);
+
       audio.src = trackPath;
       audio.load();
-    }
 
-    if (isRunning) {
-      // Play music when timer is running
+      // Auto-play the new track if music was playing or should be playing
+      if (shouldAutoPlay && isMusicEnabled) {
+        audio.play().catch((error) => {
+          console.log("Audio play prevented:", error);
+          setIsMusicPlaying(false);
+        });
+      }
+
+      // Reset the auto-play flag
+      shouldAutoPlayNextTrack.current = false;
+    }
+  }, [mode, isMusicEnabled, currentTrackIndex, musicGenre, getCurrentTrack, isMusicPlaying]);
+
+  // Sync audio playback with isMusicPlaying state
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    const audio = audioRef.current;
+
+    // Add listeners to keep isMusicPlaying in sync with actual audio state
+    const handlePlay = () => {
+      setIsMusicPlaying(true);
+    };
+
+    const handlePause = () => {
+      // Don't update isMusicPlaying to false if the track ended
+      // The track end handler will set the flag before pausing
+      if (!shouldAutoPlayNextTrack.current) {
+        setIsMusicPlaying(false);
+      }
+    };
+
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("pause", handlePause);
+
+    // Sync playback state
+    if (isMusicEnabled && isMusicPlaying && audio.paused) {
       audio.play().catch((error) => {
-        // Auto-play might be blocked by browser
         console.log("Audio play prevented:", error);
       });
-    } else {
-      // Pause music when timer is paused
+    } else if (!isMusicPlaying && !audio.paused) {
+      audio.pause();
+    } else if (!isMusicEnabled && !audio.paused) {
       audio.pause();
     }
-  }, [isRunning, mode, isMusicEnabled, currentTrackIndex, musicGenre, getCurrentTrack]);
+
+    return () => {
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+    };
+  }, [isMusicPlaying, isMusicEnabled]);
 
   const playNotificationSound = useCallback(() => {
     try {
@@ -229,11 +428,21 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     let interval: NodeJS.Timeout;
 
     if (isRunning && timeLeft > 0) {
+      timerCompleteRef.current = false;
       interval = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
+        setTimeLeft((prev: number) => {
+          if (prev <= 1) {
+            // Timer is about to complete
+            if (!timerCompleteRef.current) {
+              timerCompleteRef.current = true;
+              // Use setTimeout to avoid setState in effect
+              setTimeout(() => handleTimerComplete(), 0);
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
-    } else if (timeLeft === 0 && isRunning) {
-      handleTimerComplete();
     }
 
     return () => clearInterval(interval);
@@ -270,7 +479,24 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   );
 
   const toggleMusic = useCallback(() => {
-    setIsMusicEnabled((prev) => !prev);
+    setIsMusicEnabled((prev) => {
+      const newValue = !prev;
+      if (!newValue) {
+        // If disabling music, stop playback
+        setIsMusicPlaying(false);
+      }
+      return newValue;
+    });
+  }, []);
+
+  const playMusic = useCallback(() => {
+    if (isMusicEnabled) {
+      setIsMusicPlaying(true);
+    }
+  }, [isMusicEnabled]);
+
+  const pauseMusic = useCallback(() => {
+    setIsMusicPlaying(false);
   }, []);
 
   const setMusicGenre = useCallback((genre: MusicGenre) => {
@@ -307,6 +533,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         isRunning,
         sessionsCompleted,
         isMusicEnabled,
+        isMusicPlaying,
         musicGenre,
         currentTrackIndex,
         isLooping,
@@ -320,6 +547,8 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         setMode,
         setCustomDurations: updateCustomDurations,
         toggleMusic,
+        playMusic,
+        pauseMusic,
         setMusicGenre,
         nextTrack,
         previousTrack,

@@ -1128,7 +1128,7 @@ export function MindMapCanvas({ initialNodes, initialEdges }) {
 - Create workspace
 - Invite members by email
 - Role-based permissions (owner, editor, viewer)
-- Share notes/decks within workspace
+- Share exams/notes/decks within workspace
 - Activity feed for workspace
 - Email notifications (Resend)
 
