@@ -18,6 +18,7 @@ export default function NewNotePageContent() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("<p></p>");
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [noteLinks, setNoteLinks] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -58,6 +59,7 @@ export default function NewNotePageContent() {
           content,
           folderId,
           tagIds: selectedTags.map((tag) => tag.id),
+          noteLinks,
         }),
       });
 
@@ -147,7 +149,12 @@ export default function NewNotePageContent() {
           <TagInput selectedTags={selectedTags} onTagsChange={setSelectedTags} placeholder="Add tags to organize..." />
         </div>
 
-        <Editor content={content} onChange={setContent} placeholder="Start writing your note..." />
+        <Editor
+          content={content}
+          onChange={setContent}
+          onNoteLinksChange={setNoteLinks}
+          placeholder="Start writing your note..."
+        />
       </div>
 
       <DeleteConfirmModal

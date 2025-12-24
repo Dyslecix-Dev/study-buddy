@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { title, content, folderId, tagIds } = await request.json()
+    const { title, content, folderId, tagIds, noteLinks } = await request.json()
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -70,6 +70,17 @@ export async function POST(request: NextRequest) {
         Tag: true,
       },
     })
+
+    // Create note links if provided
+    if (noteLinks && noteLinks.length > 0) {
+      await prisma.noteLink.createMany({
+        data: noteLinks.map((toNoteId: string) => ({
+          fromNoteId: note.id,
+          toNoteId,
+        })),
+        skipDuplicates: true,
+      })
+    }
 
     return NextResponse.json({ note }, { status: 201 })
   } catch (error: any) {

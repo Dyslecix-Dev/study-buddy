@@ -11,6 +11,14 @@ import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 import { toast } from "sonner";
 import { Tag } from "@/lib/tag-utils";
 import TagInput from "@/components/tags/tag-input";
+import { BacklinksPanel } from "@/components/notes/backlinks-panel";
+import { UnlinkedMentions } from "@/components/notes/unlinked-mentions";
+import { BrokenLinksWarning } from "@/components/notes/broken-links-warning";
+
+interface LinkedNote {
+  id: string;
+  title: string;
+}
 
 export default function NoteEditorPage({ params }: { params: Promise<{ folderId: string; noteId: string }> }) {
   const { folderId, noteId } = use(params);
@@ -18,6 +26,9 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("<p></p>");
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [noteLinks, setNoteLinks] = useState<string[]>([]);
+  const [linkedNotes, setLinkedNotes] = useState<LinkedNote[]>([]);
+  const [backlinks, setBacklinks] = useState<LinkedNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(true);
@@ -36,6 +47,8 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
         setTitle(note.title);
         setContent(note.content);
         setSelectedTags(note.Tag || []);
+        setLinkedNotes(note.linkedNotes || []);
+        setBacklinks(note.backlinks || []);
       } catch (err: any) {
         toast.error(err.message || "Failed to load note");
       } finally {
@@ -73,12 +86,19 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
             title,
             content,
             tagIds: selectedTags.map(tag => tag.id),
+            noteLinks,
           }),
         });
 
         if (!response.ok) {
           throw new Error("Failed to save note");
         }
+
+        const { note } = await response.json();
+
+        // Update linked notes and backlinks after save
+        setLinkedNotes(note.linkedNotes || []);
+        setBacklinks(note.backlinks || []);
 
         setSaved(true);
       } catch (err: any) {
@@ -89,7 +109,7 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
     }, 2000); // Auto-save after 2 seconds of no changes
 
     return () => clearTimeout(timeoutId);
-  }, [title, content, selectedTags, noteId, loading, saved]);
+  }, [title, content, selectedTags, noteLinks, noteId, loading, saved]);
 
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
@@ -104,6 +124,123 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
   const handleTagsChange = (newTags: Tag[]) => {
     setSelectedTags(newTags);
     setSaved(false);
+  };
+
+  const handleNoteLinksChange = (newNoteLinks: string[]) => {
+    setNoteLinks(newNoteLinks);
+    setSaved(false);
+  };
+
+  const handleLinkAllMentions = (noteIdToLink: string, noteTitleToLink: string) => {
+    // Create a temporary div to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+
+    // Function to process text nodes
+    const processTextNodes = (node: Node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent || '';
+        const regex = new RegExp(`\\b${noteTitleToLink.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+
+        if (regex.test(text)) {
+          const span = document.createElement('span');
+          span.innerHTML = text.replace(regex, (match) => {
+            return `<span data-type="note-link" data-note-id="${noteIdToLink}" data-note-title="${match}" class="note-link bg-blue-50 text-blue-700 px-1 py-0.5 rounded cursor-pointer hover:bg-blue-100 transition-colors">[[${match}]]</span>`;
+          });
+
+          node.parentNode?.replaceChild(span, node);
+
+          // Unwrap the temporary span
+          while (span.firstChild) {
+            span.parentNode?.insertBefore(span.firstChild, span);
+          }
+          span.remove();
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        // Don't process existing note links or code blocks
+        const element = node as HTMLElement;
+        if (element.getAttribute('data-type') === 'note-link' ||
+            element.tagName === 'CODE' ||
+            element.tagName === 'PRE') {
+          return;
+        }
+
+        // Process child nodes
+        const children = Array.from(node.childNodes);
+        children.forEach(processTextNodes);
+      }
+    };
+
+    processTextNodes(tempDiv);
+    const newContent = tempDiv.innerHTML;
+
+    setContent(newContent);
+    setSaved(false);
+  };
+
+  const handleRemoveBrokenLinks = async () => {
+    try {
+      // Extract note IDs and their titles from content
+      const noteLinksMap = new Map<string, string>();
+      const linkRegex = /<span[^>]*data-type="note-link"[^>]*data-note-id="([^"]*)"[^>]*data-note-title="([^"]*)"[^>]*>.*?<\/span>/g;
+      let match;
+
+      while ((match = linkRegex.exec(content)) !== null) {
+        const noteId = match[1];
+        const noteTitle = match[2];
+        if (!noteLinksMap.has(noteId)) {
+          noteLinksMap.set(noteId, noteTitle);
+        }
+      }
+
+      if (noteLinksMap.size === 0) {
+        toast.info('No note links found');
+        return;
+      }
+
+      // Check which notes exist
+      const brokenNoteIds = new Set<string>();
+      for (const noteId of noteLinksMap.keys()) {
+        try {
+          const response = await fetch(`/api/notes/${noteId}`);
+          if (!response.ok) {
+            brokenNoteIds.add(noteId);
+          }
+        } catch (error) {
+          brokenNoteIds.add(noteId);
+        }
+      }
+
+      if (brokenNoteIds.size === 0) {
+        toast.info('No broken links found');
+        return;
+      }
+
+      // Create a temporary div to parse HTML properly
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+
+      // Find and remove broken link spans
+      const linkSpans = tempDiv.querySelectorAll('span[data-type="note-link"]');
+      linkSpans.forEach((span) => {
+        const noteId = span.getAttribute('data-note-id');
+        if (noteId && brokenNoteIds.has(noteId)) {
+          // Get the title from the data attribute or the text content
+          const noteTitle = span.getAttribute('data-note-title') || span.textContent?.replace(/^\[\[|\]\]$/g, '') || '';
+          // Replace the span with just the title text
+          const textNode = document.createTextNode(noteTitle);
+          span.parentNode?.replaceChild(textNode, span);
+        }
+      });
+
+      const newContent = tempDiv.innerHTML;
+      setContent(newContent);
+      setSaved(false);
+      toast.success(`Removed ${brokenNoteIds.size} broken link${brokenNoteIds.size > 1 ? 's' : ''}`);
+    } catch (error) {
+      console.error('Error removing broken links:', error);
+      toast.error('Failed to remove broken links');
+    }
   };
 
   const handleBackClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -199,7 +336,30 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
           <TagInput selectedTags={selectedTags} onTagsChange={handleTagsChange} placeholder="Add tags to organize..." />
         </div>
 
-        <Editor content={content} onChange={handleContentChange} placeholder="Start writing your note..." />
+        <Editor
+          content={content}
+          onChange={handleContentChange}
+          onNoteLinksChange={handleNoteLinksChange}
+          currentNoteId={noteId}
+          placeholder="Start writing your note..."
+        />
+
+        <BrokenLinksWarning
+          content={content}
+          onFix={handleRemoveBrokenLinks}
+        />
+
+        <UnlinkedMentions
+          currentNoteId={noteId}
+          content={content}
+          onLinkAll={handleLinkAllMentions}
+        />
+
+        <BacklinksPanel
+          backlinks={backlinks}
+          linkedNotes={linkedNotes}
+          folderId={folderId}
+        />
       </div>
 
       <DeleteConfirmModal

@@ -25,6 +25,26 @@ export async function GET(
       },
       include: {
         Tag: true,
+        NoteLink_NoteLink_fromNoteIdToNote: {
+          include: {
+            Note_NoteLink_toNoteIdToNote: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
+        },
+        NoteLink_NoteLink_toNoteIdToNote: {
+          include: {
+            Note_NoteLink_fromNoteIdToNote: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
+        },
       },
     })
 
@@ -32,7 +52,17 @@ export async function GET(
       return NextResponse.json({ error: 'Note not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ note })
+    // Format the response to include linked notes and backlinks
+    const linkedNotes = note.NoteLink_NoteLink_fromNoteIdToNote.map(link => link.Note_NoteLink_toNoteIdToNote)
+    const backlinks = note.NoteLink_NoteLink_toNoteIdToNote.map(link => link.Note_NoteLink_fromNoteIdToNote)
+
+    return NextResponse.json({
+      note: {
+        ...note,
+        linkedNotes,
+        backlinks,
+      }
+    })
   } catch (error: any) {
     console.error('Error fetching note:', error)
     return NextResponse.json({ error: 'Failed to fetch note' }, { status: 500 })
@@ -55,7 +85,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { title, content, tagIds } = await request.json()
+    const { title, content, tagIds, noteLinks } = await request.json()
 
     // Verify note belongs to user
     const existingNote = await prisma.note.findFirst({
@@ -97,11 +127,42 @@ export async function PATCH(
       }
     }
 
+    // Handle note link updates
+    if (noteLinks !== undefined) {
+      // Delete existing links from this note
+      await prisma.noteLink.deleteMany({
+        where: {
+          fromNoteId: id,
+        },
+      })
+
+      // Create new links
+      if (noteLinks.length > 0) {
+        await prisma.noteLink.createMany({
+          data: noteLinks.map((toNoteId: string) => ({
+            fromNoteId: id,
+            toNoteId,
+          })),
+          skipDuplicates: true,
+        })
+      }
+    }
+
     const note = await prisma.note.update({
       where: { id },
       data: updateData,
       include: {
         Tag: true,
+        NoteLink_NoteLink_fromNoteIdToNote: {
+          include: {
+            Note_NoteLink_toNoteIdToNote: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
+        },
       },
     })
 

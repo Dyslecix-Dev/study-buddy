@@ -200,31 +200,76 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Calculate study streak
+// Calculate study streak - counts ANY activity (focus, reviews, tasks, notes)
 async function calculateStreak(userId: string, currentDate: Date): Promise<number> {
   let streak = 0
   let checkDate = startOfDay(currentDate)
+  let checkedToday = false
 
   while (true) {
-    const sessionsOnDay = await prisma.focusSession.count({
-      where: {
-        userId,
-        completedAt: {
-          gte: checkDate,
-          lt: new Date(checkDate.getTime() + 24 * 60 * 60 * 1000),
-        },
-      },
-    })
+    const dayEnd = new Date(checkDate.getTime() + 24 * 60 * 60 * 1000)
 
-    if (sessionsOnDay > 0) {
+    // Count ANY activity on this day
+    const [focusSessions, reviews, completedTasks, updatedNotes] = await Promise.all([
+      prisma.focusSession.count({
+        where: {
+          userId,
+          completedAt: {
+            gte: checkDate,
+            lt: dayEnd,
+          },
+        },
+      }),
+      prisma.review.count({
+        where: {
+          Flashcard: {
+            Deck: {
+              userId,
+            },
+          },
+          createdAt: {
+            gte: checkDate,
+            lt: dayEnd,
+          },
+        },
+      }),
+      prisma.task.count({
+        where: {
+          userId,
+          completed: true,
+          updatedAt: {
+            gte: checkDate,
+            lt: dayEnd,
+          },
+        },
+      }),
+      prisma.note.count({
+        where: {
+          userId,
+          updatedAt: {
+            gte: checkDate,
+            lt: dayEnd,
+          },
+        },
+      }),
+    ])
+
+    const activityOnDay = focusSessions + reviews + completedTasks + updatedNotes
+    const isToday = checkDate.getTime() === startOfDay(currentDate).getTime()
+
+    if (activityOnDay > 0) {
       streak++
+      checkedToday = isToday
       checkDate = subDays(checkDate, 1)
     } else {
-      // Allow one day gap for today if no sessions yet
-      if (streak === 0 && checkDate.getTime() === startOfDay(currentDate).getTime()) {
+      // If we're checking today and there's no activity yet, don't break the streak
+      // Just move to yesterday and continue checking
+      if (isToday && !checkedToday) {
+        checkedToday = true
         checkDate = subDays(checkDate, 1)
         continue
       }
+      // No activity on this day and it's not "today with no activity yet" - streak is broken
       break
     }
 

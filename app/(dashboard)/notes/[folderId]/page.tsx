@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import DashboardNav from "@/components/dashboard-nav";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Plus, FileText, Edit2, Trash2 } from "lucide-react";
+import { Plus, FileText, Edit2, Trash2, Network } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 import { Tag } from "@/lib/tag-utils";
@@ -193,16 +193,32 @@ export default function FolderDetailPage() {
           <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
             Notes ({filteredNotes.length}{tagFilter.length > 0 ? ` of ${folder.Note.length}` : ""})
           </h1>
-          <Link
-            href={`/notes/new?folderId=${folderId}`}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-black focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 cursor-pointer"
-            style={{ backgroundColor: "var(--primary)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            <Plus className="mr-2" size={18} />
-            New Note
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href={`/graph/${folderId}`}
+              className="inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 cursor-pointer"
+              style={{
+                backgroundColor: "var(--surface)",
+                borderColor: "var(--border)",
+                color: "var(--text-primary)"
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface)")}
+            >
+              <Network className="mr-2" size={18} />
+              View Graph
+            </Link>
+            <Link
+              href={`/notes/new?folderId=${folderId}`}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-black focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 cursor-pointer"
+              style={{ backgroundColor: "var(--primary)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              <Plus className="mr-2" size={18} />
+              New Note
+            </Link>
+          </div>
         </div>
 
         <div className="mb-6">

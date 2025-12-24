@@ -904,25 +904,22 @@ export const NoteLink = Node.create({
 
 ### Phase 2 Deliverables Checklist
 
-- [ ] Pomodoro timer with customizable intervals
-- [ ] Session logging and tracking
-- [ ] Audio notifications
-- [ ] SM-2 spaced repetition algorithm
-- [ ] Review queue with due cards
-- [ ] Rate cards (Again/Hard/Good/Easy)
-- [ ] Retention statistics
-- [ ] Tag creation and management
-- [ ] Tag filtering across features
-- [ ] Progress dashboard homepage
-- [ ] Study time charts
-- [ ] Activity streak calendar
-- [ ] Recent activity feed
-- [ ] Note linking with [[syntax]]
-- [ ] Backlinks panel
-- [ ] Auto-suggest note names
-- [ ] Performance optimization
-- [ ] API rate limiting
-- [ ] Database indexing
+- [x] Pomodoro timer with customizable intervals
+- [x] Session logging and tracking
+- [x] Audio notifications
+- [x] SM-2 spaced repetition algorithm
+- [x] Review queue with due cards
+- [x] Rate cards (Again/Hard/Good/Easy)
+- [x] Retention statistics
+- [x] Tag creation and management
+- [x] Tag filtering across features
+- [x] Progress dashboard homepage
+- [x] Study time charts
+- [x] Activity streak calendar
+- [x] Recent activity feed
+- [x] Note linking with [[syntax]]
+- [x] Backlinks panel
+- [x] Auto-suggest note names
 
 ---
 

@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import FolderList from "@/components/folders/folder-list";
 import DashboardNav from "@/components/dashboard-nav";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Plus } from "lucide-react";
+import { Plus, Network } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 
@@ -165,16 +166,32 @@ export default function NotesPage() {
               {folders.length} {folders.length === 1 ? "folder" : "folders"}
             </p>
           </div>
-          <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-black focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 cursor-pointer"
-            style={{ backgroundColor: "var(--primary)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            <Plus className="mr-2" size={18} />
-            New Folder
-          </button>
+          <div className="flex gap-3">
+            <Link
+              href="/graph"
+              className="inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 cursor-pointer"
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--text-primary)",
+                backgroundColor: "var(--surface)",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-hover)")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface)")}
+            >
+              <Network className="mr-2" size={18} />
+              Knowledge Graph
+            </Link>
+            <button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-black focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 cursor-pointer"
+              style={{ backgroundColor: "var(--primary)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              <Plus className="mr-2" size={18} />
+              New Folder
+            </button>
+          </div>
         </div>
 
         {/* Create/Edit Form */}
