@@ -34,8 +34,14 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         title: true,
+        folderId: true,
         createdAt: true,
         updatedAt: true,
+        Folder: {
+          select: {
+            name: true,
+          },
+        },
         Tag: {
           select: {
             id: true,
@@ -107,6 +113,8 @@ export async function GET(request: NextRequest) {
       nodes: notes.map(note => ({
         id: note.id,
         title: note.title,
+        folderId: note.folderId,
+        folderName: note.Folder?.name,
         tags: note.Tag,
         linkCount: note.NoteLink_NoteLink_fromNoteIdToNote.length,
         updatedAt: note.updatedAt,
@@ -125,6 +133,7 @@ export async function GET(request: NextRequest) {
       mostConnected: mostConnected.map(note => ({
         id: note.id,
         title: note.title,
+        folderName: note.Folder?.name,
         connections: note.connections,
       })),
     })

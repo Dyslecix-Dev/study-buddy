@@ -7,6 +7,7 @@ import { toast } from "sonner";
 interface UnlinkedMention {
   noteId: string;
   noteTitle: string;
+  folderName?: string | null;
   count: number;
 }
 
@@ -42,7 +43,7 @@ export function UnlinkedMentions({ currentNoteId, content, onLinkAll }: Unlinked
           .replace(/<[^>]+>/g, " ") // Remove all HTML tags
           .toLowerCase();
 
-        notes.forEach((note: { id: string; title: string }) => {
+        notes.forEach((note: { id: string; title: string; Folder?: { name: string } | null }) => {
           // Skip current note
           if (note.id === currentNoteId) return;
 
@@ -58,6 +59,7 @@ export function UnlinkedMentions({ currentNoteId, content, onLinkAll }: Unlinked
             unlinked.push({
               noteId: note.id,
               noteTitle: note.title,
+              folderName: note.Folder?.name,
               count,
             });
           }
@@ -129,6 +131,7 @@ export function UnlinkedMentions({ currentNoteId, content, onLinkAll }: Unlinked
                   </div>
                   <div className="text-xs" style={{ color: "var(--text-muted)" }}>
                     {mention.count} {mention.count === 1 ? "mention" : "mentions"}
+                    {mention.folderName && ` • in ${mention.folderName}`}
                   </div>
                 </div>
                 <button

@@ -16,8 +16,9 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams
     const query = searchParams.get('q') || ''
+    const excludeNoteId = searchParams.get('excludeNoteId')
 
-    // Search notes by title
+    // Search notes by title with folder information
     const notes = await prisma.note.findMany({
       where: {
         userId: user.id,
@@ -25,10 +26,22 @@ export async function GET(request: NextRequest) {
           contains: query,
           mode: 'insensitive',
         },
+        // Exclude the current note if provided
+        ...(excludeNoteId && {
+          id: {
+            not: excludeNoteId,
+          },
+        }),
       },
       select: {
         id: true,
         title: true,
+        folderId: true,
+        Folder: {
+          select: {
+            name: true,
+          },
+        },
       },
       orderBy: {
         updatedAt: 'desc',

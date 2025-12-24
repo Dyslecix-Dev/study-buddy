@@ -48,12 +48,12 @@ export function KnowledgeGraph({ folderId }: KnowledgeGraphProps = {}) {
   const [showOrphaned, setShowOrphaned] = useState(true);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const containerRef = useRef<HTMLDivElement>(null);
-  const [textColor, setTextColor] = useState("#000");
+  const [textColor, setTextColor] = useState("#1f2937");
 
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
-        const width = containerRef.current.offsetWidth;
+        const width = containerRef.current.clientWidth;
         // Mobile-responsive height: smaller on mobile, larger on desktop
         const isMobile = window.innerWidth < 768;
         const baseHeight = isMobile ? 400 : 600;
@@ -169,8 +169,8 @@ export function KnowledgeGraph({ folderId }: KnowledgeGraphProps = {}) {
   return (
     <div
       ref={containerRef}
-      className={isFullscreen ? "fixed inset-0 z-50" : "relative"}
-      style={isFullscreen ? { backgroundColor: "var(--background)" } : undefined}
+      className={isFullscreen ? "fixed inset-0 z-50" : "relative border rounded-lg overflow-hidden"}
+      style={isFullscreen ? { backgroundColor: "var(--background)" } : { borderColor: "var(--border)" }}
     >
       {/* Statistics Bar */}
       <div className="p-3 sm:p-4 border-b" style={{ borderColor: "var(--border)", backgroundColor: "var(--surface)" }}>
@@ -256,7 +256,7 @@ export function KnowledgeGraph({ folderId }: KnowledgeGraphProps = {}) {
           onNodeClick={handleNodeClick}
           nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
             const label = node.name;
-            const fontSize = 12 / globalScale;
+            const fontSize = 14 / globalScale;
             const nodeSize = Math.sqrt(node.val || 1) * 6;
 
             // Draw node circle
@@ -268,14 +268,12 @@ export function KnowledgeGraph({ folderId }: KnowledgeGraphProps = {}) {
             ctx.lineWidth = 2 / globalScale;
             ctx.stroke();
 
-            // Draw label
-            if (globalScale > 1.5) {
-              ctx.font = `${fontSize}px Sans-Serif`;
-              ctx.textAlign = "center";
-              ctx.textBaseline = "middle";
-              ctx.fillStyle = textColor;
-              ctx.fillText(label, node.x, node.y + nodeSize + fontSize);
-            }
+            // Draw label - always show, not dependent on zoom
+            ctx.font = `${fontSize}px Sans-Serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = textColor;
+            ctx.fillText(label, node.x, node.y + nodeSize + fontSize + 4);
           }}
           cooldownTime={3000}
           d3VelocityDecay={0.3}

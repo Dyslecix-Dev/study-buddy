@@ -6,6 +6,10 @@ import { ExternalLink } from 'lucide-react'
 interface BacklinkNote {
   id: string
   title: string
+  folderId?: string | null
+  Folder?: {
+    name: string
+  } | null
 }
 
 interface BacklinksPanelProps {
@@ -42,7 +46,7 @@ export function BacklinksPanel({ backlinks, linkedNotes, folderId }: BacklinksPa
               <div
                 key={note.id}
                 onClick={() => handleNoteClick(note.id)}
-                className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors border"
+                className="flex items-start gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors border"
                 style={{
                   backgroundColor: 'var(--card-bg)',
                   borderColor: 'var(--border)',
@@ -55,8 +59,15 @@ export function BacklinksPanel({ backlinks, linkedNotes, folderId }: BacklinksPa
                   e.currentTarget.style.backgroundColor = 'var(--card-bg)'
                 }}
               >
-                <ExternalLink size={16} />
-                <span className="text-sm">{note.title}</span>
+                <ExternalLink size={16} className="mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm">{note.title}</div>
+                  {note.Folder && (
+                    <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      in {note.Folder.name}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -76,7 +87,7 @@ export function BacklinksPanel({ backlinks, linkedNotes, folderId }: BacklinksPa
               <div
                 key={note.id}
                 onClick={() => handleNoteClick(note.id)}
-                className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors border"
+                className="flex items-start gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors border"
                 style={{
                   backgroundColor: 'var(--card-bg)',
                   borderColor: 'var(--border)',
@@ -89,8 +100,15 @@ export function BacklinksPanel({ backlinks, linkedNotes, folderId }: BacklinksPa
                   e.currentTarget.style.backgroundColor = 'var(--card-bg)'
                 }}
               >
-                <ExternalLink size={16} />
-                <span className="text-sm">{note.title}</span>
+                <ExternalLink size={16} className="mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm">{note.title}</div>
+                  {note.Folder && (
+                    <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      in {note.Folder.name}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

@@ -68,8 +68,14 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(folder, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating folder:", error);
+
+    // Handle unique constraint violation
+    if (error.code === 'P2002') {
+      return NextResponse.json({ error: "A folder with this name already exists" }, { status: 409 });
+    }
+
     return NextResponse.json({ error: "Failed to create folder" }, { status: 500 });
   }
 }

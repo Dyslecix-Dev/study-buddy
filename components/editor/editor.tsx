@@ -17,12 +17,13 @@ interface EditorProps {
   content: string
   onChange: (content: string) => void
   onNoteLinksChange?: (noteIds: string[]) => void
+  onNoteLinkClick?: (noteId: string, noteTitle: string) => void
   placeholder?: string
   editable?: boolean
   currentNoteId?: string
 }
 
-export default function Editor({ content, onChange, onNoteLinksChange, placeholder = 'Start writing...', editable = true, currentNoteId }: EditorProps) {
+export default function Editor({ content, onChange, onNoteLinksChange, onNoteLinkClick, placeholder = 'Start writing...', editable = true, currentNoteId }: EditorProps) {
   const router = useRouter()
   const [suggestionQuery, setSuggestionQuery] = useState<string>('')
   const [suggestionPosition, setSuggestionPosition] = useState<{ top: number; left: number } | null>(null)
@@ -33,11 +34,10 @@ export default function Editor({ content, onChange, onNoteLinksChange, placehold
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const handleNoteLinkClick = useCallback((noteId: string, noteTitle: string) => {
-    // Navigate to the linked note
-    // We'll need to determine the folder structure - for now, just show a message
-    console.log('Navigate to note:', noteId, noteTitle)
-    // TODO: Implement proper navigation based on folder structure
-  }, [])
+    if (onNoteLinkClick) {
+      onNoteLinkClick(noteId, noteTitle)
+    }
+  }, [onNoteLinkClick])
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -50,7 +50,7 @@ export default function Editor({ content, onChange, onNoteLinksChange, placehold
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: 'text-blue-600 underline cursor-pointer',
+          class: 'text-blue-600 dark:text-blue-400 underline cursor-pointer',
         },
       }),
       Image.configure({
@@ -64,7 +64,7 @@ export default function Editor({ content, onChange, onNoteLinksChange, placehold
       Underline,
       NoteLink.configure({
         HTMLAttributes: {
-          class: 'note-link bg-blue-50 text-blue-700 px-1 py-0.5 rounded cursor-pointer hover:bg-blue-100 transition-colors',
+          class: 'note-link bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1 py-0.5 rounded cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors',
         },
         onNoteLinkClick: handleNoteLinkClick,
       }),
@@ -73,7 +73,7 @@ export default function Editor({ content, onChange, onNoteLinksChange, placehold
     editable,
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl prose-gray mx-auto focus:outline-none min-h-[300px] p-4 [&_*]:text-gray-900 [&_h1]:text-gray-900 [&_h2]:text-gray-900 [&_h3]:text-gray-900',
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert mx-auto focus:outline-none min-h-[300px] p-4 text-gray-900 dark:text-gray-100',
       },
       handleKeyDown: (view, event) => {
         // Detect [[ typing for note link suggestion
@@ -184,9 +184,10 @@ export default function Editor({ content, onChange, onNoteLinksChange, placehold
           hoverTimeoutRef.current = setTimeout(() => {
             const rect = target.getBoundingClientRect()
             setPreviewNoteId(noteId)
+            // Position preview to the left of the link, overlapping the editor
             setPreviewPosition({
-              x: rect.left,
-              y: rect.bottom,
+              x: rect.left - 200, // Position closer to the link, overlapping editor
+              y: rect.top - 20, // Slight vertical offset for better alignment
             })
           }, 500) // 500ms delay before showing preview
         }
@@ -237,9 +238,11 @@ export default function Editor({ content, onChange, onNoteLinksChange, placehold
 
   return (
     <div className="relative">
-      <div className="border border-gray-300 rounded-lg overflow-hidden bg-white">
+      <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}>
         {editable && <EditorToolbar editor={editor} />}
-        <EditorContent editor={editor} />
+        <div style={{ color: 'var(--text-primary)' }}>
+          <EditorContent editor={editor} />
+        </div>
       </div>
 
       {editable && (
@@ -249,6 +252,7 @@ export default function Editor({ content, onChange, onNoteLinksChange, placehold
           position={suggestionPosition}
           onSelect={handleSuggestionSelect}
           onClose={handleSuggestionClose}
+          currentNoteId={currentNoteId}
         />
       )}
 

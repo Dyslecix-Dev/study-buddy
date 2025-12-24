@@ -13,6 +13,8 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
 interface GraphNode {
   id: string
   title: string
+  folderId?: string | null
+  folderName?: string | null
   tags: { id: string; name: string; color?: string }[]
   linkCount: number
   updatedAt: string
@@ -33,7 +35,7 @@ interface GraphData {
     averageConnections: number
   }
   orphanedNotes: { id: string; title: string }[]
-  mostConnected: { id: string; title: string; connections: number }[]
+  mostConnected: { id: string; title: string; folderName?: string | null; connections: number }[]
 }
 
 interface KnowledgeGraphProps {
@@ -48,7 +50,52 @@ export function KnowledgeGraph({ height = 600, onNodeClick }: KnowledgeGraphProp
   const [searchQuery, setSearchQuery] = useState('')
   const [showStats, setShowStats] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [graphWidth, setGraphWidth] = useState(800)
   const graphRef = useRef<any>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Track container width for responsive graph
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setGraphWidth(containerRef.current.clientWidth)
+      }
+    }
+
+    updateWidth()
+    window.addEventListener('resize', updateWidth)
+    return () => window.removeEventListener('resize', updateWidth)
+  }, [isFullscreen])
+
+  // Detect theme changes
+  useEffect(() => {
+    const detectTheme = () => {
+      const isDark = document.documentElement.classList.contains('dark') ||
+                     window.matchMedia('(prefers-color-scheme: dark)').matches
+      setIsDarkMode(isDark)
+    }
+
+    // Initial detection
+    detectTheme()
+
+    // Listen for theme changes
+    const observer = new MutationObserver(detectTheme)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
+
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => detectTheme()
+    mediaQuery.addEventListener('change', handleChange)
+
+    return () => {
+      observer.disconnect()
+      mediaQuery.removeEventListener('change', handleChange)
+    }
+  }, [])
 
   useEffect(() => {
     const fetchGraphData = async () => {
@@ -84,6 +131,7 @@ export function KnowledgeGraph({ height = 600, onNodeClick }: KnowledgeGraphProp
       .map(node => ({
         id: node.id,
         name: node.title,
+        folderName: node.folderName,
         val: node.linkCount + 3, // Size based on connections
         color: getNodeColor(node),
       })),
@@ -134,7 +182,7 @@ export function KnowledgeGraph({ height = 600, onNodeClick }: KnowledgeGraphProp
   }
 
   return (
-    <div className={`relative ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
+    <div ref={containerRef} className={`relative ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
       {/* Controls */}
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center gap-4">
         <div className="flex-1 max-w-md">
@@ -231,13 +279,20 @@ export function KnowledgeGraph({ height = 600, onNodeClick }: KnowledgeGraphProp
               <h4 className="font-semibold mt-4 mb-2" style={{ color: 'var(--text-primary)' }}>
                 Most Connected
               </h4>
-              <div className="space-y-1 text-xs">
+              <div className="space-y-2 text-xs">
                 {graphData.mostConnected.slice(0, 3).map((note) => (
-                  <div key={note.id} className="flex justify-between">
-                    <span className="truncate" style={{ color: 'var(--text-secondary)' }}>
-                      {note.title}
-                    </span>
-                    <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                  <div key={note.id} className="flex justify-between items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate" style={{ color: 'var(--text-secondary)' }}>
+                        {note.title}
+                      </div>
+                      {note.folderName && (
+                        <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                          📁 {note.folderName}
+                        </div>
+                      )}
+                    </div>
+                    <span className="font-medium flex-shrink-0" style={{ color: 'var(--text-primary)' }}>
                       {note.connections}
                     </span>
                   </div>
@@ -258,7 +313,9 @@ export function KnowledgeGraph({ height = 600, onNodeClick }: KnowledgeGraphProp
         <ForceGraph2D
           ref={graphRef}
           graphData={filteredData}
-          nodeLabel="name"
+          width={graphWidth}
+          height={isFullscreen ? window.innerHeight : height}
+          nodeLabel={(node: any) => node.folderName ? `${node.name}\nin ${node.folderName}` : node.name}
           nodeColor="color"
           nodeVal="val"
           onNodeClick={handleNodeClick}
@@ -269,6 +326,7 @@ export function KnowledgeGraph({ height = 600, onNodeClick }: KnowledgeGraphProp
           nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
             const label = node.name
             const fontSize = 12 / globalScale
+            const smallFontSize = 10 / globalScale
             ctx.font = `${fontSize}px Sans-Serif`
 
             // Draw node circle
@@ -277,11 +335,19 @@ export function KnowledgeGraph({ height = 600, onNodeClick }: KnowledgeGraphProp
             ctx.fillStyle = node.color
             ctx.fill()
 
-            // Draw label
+            // Draw main label (note title)
             ctx.textAlign = 'center'
             ctx.textBaseline = 'middle'
-            ctx.fillStyle = '#fff'
-            ctx.fillText(label, node.x, node.y + node.val + fontSize + 2)
+            ctx.fillStyle = isDarkMode ? '#e5e7eb' : '#1f2937'
+            ctx.fillText(label, node.x, node.y + node.val + fontSize + 4)
+
+            // Draw folder name below if available
+            if (node.folderName) {
+              ctx.font = `${smallFontSize}px Sans-Serif`
+              ctx.fillStyle = isDarkMode ? '#9ca3af' : '#6b7280'
+              const folderText = `📁 ${node.folderName}`
+              ctx.fillText(folderText, node.x, node.y + node.val + fontSize + smallFontSize + 8)
+            }
           }}
           cooldownTicks={100}
           onEngineStop={() => graphRef.current?.zoomToFit(400)}

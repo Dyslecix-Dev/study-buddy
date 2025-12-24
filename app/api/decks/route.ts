@@ -70,12 +70,18 @@ export async function POST(request: NextRequest) {
 
     console.log('Deck created successfully:', deck.id)
     return NextResponse.json(deck, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating deck:', error)
     if (error instanceof Error) {
       console.error('Error message:', error.message)
       console.error('Error stack:', error.stack)
     }
+
+    // Handle unique constraint violation
+    if (error.code === 'P2002') {
+      return NextResponse.json({ error: 'A deck with this name already exists' }, { status: 409 })
+    }
+
     return NextResponse.json({ error: 'Failed to create deck' }, { status: 500 })
   }
 }

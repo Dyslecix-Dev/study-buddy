@@ -34,6 +34,7 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
   const [saved, setSaved] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const [pendingNavigationNoteId, setPendingNavigationNoteId] = useState<string | null>(null);
 
   // Fetch note on mount
   useEffect(() => {
@@ -252,7 +253,26 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
 
   const handleConfirmLeave = () => {
     setSaved(true); // Prevent beforeunload from firing
-    router.push(`/notes/${folderId}`);
+
+    // If there's a pending navigation to another note, go there
+    if (pendingNavigationNoteId) {
+      router.push(`/notes/${folderId}/edit/${pendingNavigationNoteId}`);
+      setPendingNavigationNoteId(null);
+    } else {
+      // Otherwise, go back to folder
+      router.push(`/notes/${folderId}`);
+    }
+  };
+
+  const handleNoteLinkClick = async (linkedNoteId: string, noteTitle: string) => {
+    if (!saved) {
+      // Show unsaved warning and store the note ID to navigate to after confirmation
+      setPendingNavigationNoteId(linkedNoteId);
+      setShowUnsavedWarning(true);
+    } else {
+      // Navigate immediately if there are no unsaved changes
+      router.push(`/notes/${folderId}/edit/${linkedNoteId}`);
+    }
   };
 
   const handleDelete = async () => {
@@ -340,6 +360,7 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
           content={content}
           onChange={handleContentChange}
           onNoteLinksChange={handleNoteLinksChange}
+          onNoteLinkClick={handleNoteLinkClick}
           currentNoteId={noteId}
           placeholder="Start writing your note..."
         />
@@ -372,7 +393,10 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
 
       <DeleteConfirmModal
         isOpen={showUnsavedWarning}
-        onClose={() => setShowUnsavedWarning(false)}
+        onClose={() => {
+          setShowUnsavedWarning(false);
+          setPendingNavigationNoteId(null);
+        }}
         onConfirm={handleConfirmLeave}
         title="Unsaved Changes"
         description="You have unsaved changes. Are you sure you want to leave? Your changes will be lost."

@@ -25,12 +25,23 @@ export async function GET(
       },
       include: {
         Tag: true,
+        Folder: {
+          select: {
+            name: true,
+          },
+        },
         NoteLink_NoteLink_fromNoteIdToNote: {
           include: {
             Note_NoteLink_toNoteIdToNote: {
               select: {
                 id: true,
                 title: true,
+                folderId: true,
+                Folder: {
+                  select: {
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -41,6 +52,12 @@ export async function GET(
               select: {
                 id: true,
                 title: true,
+                folderId: true,
+                Folder: {
+                  select: {
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -159,6 +176,28 @@ export async function PATCH(
               select: {
                 id: true,
                 title: true,
+                folderId: true,
+                Folder: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        NoteLink_NoteLink_toNoteIdToNote: {
+          include: {
+            Note_NoteLink_fromNoteIdToNote: {
+              select: {
+                id: true,
+                title: true,
+                folderId: true,
+                Folder: {
+                  select: {
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -191,9 +230,25 @@ export async function PATCH(
       }
     }
 
-    return NextResponse.json({ note })
+    // Format the response to include linked notes and backlinks
+    const linkedNotes = note.NoteLink_NoteLink_fromNoteIdToNote.map(link => link.Note_NoteLink_toNoteIdToNote)
+    const backlinks = note.NoteLink_NoteLink_toNoteIdToNote.map(link => link.Note_NoteLink_fromNoteIdToNote)
+
+    return NextResponse.json({
+      note: {
+        ...note,
+        linkedNotes,
+        backlinks,
+      }
+    })
   } catch (error: any) {
     console.error('Error updating note:', error)
+
+    // Handle unique constraint violation
+    if (error.code === 'P2002') {
+      return NextResponse.json({ error: 'A note with this title already exists' }, { status: 409 })
+    }
+
     return NextResponse.json({ error: 'Failed to update note' }, { status: 500 })
   }
 }

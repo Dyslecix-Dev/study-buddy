@@ -53,7 +53,7 @@ export function NoteLinkPreview({ noteId, position, onClose }: NoteLinkPreviewPr
       <div
         className="absolute z-50 p-4 rounded-lg shadow-xl border max-w-sm"
         style={{
-          top: `${position.y + 8}px`,
+          top: `${position.y}px`,
           left: `${position.x}px`,
           backgroundColor: 'var(--surface)',
           borderColor: 'var(--border)',
@@ -74,7 +74,7 @@ export function NoteLinkPreview({ noteId, position, onClose }: NoteLinkPreviewPr
     <div
       className="absolute z-50 p-4 rounded-lg shadow-xl border max-w-md"
       style={{
-        top: `${position.y + 8}px`,
+        top: `${position.y}px`,
         left: `${position.x}px`,
         backgroundColor: 'var(--surface)',
         borderColor: 'var(--border)',
@@ -88,6 +88,11 @@ export function NoteLinkPreview({ noteId, position, onClose }: NoteLinkPreviewPr
           <h4 className="font-semibold mb-1 truncate" style={{ color: 'var(--text-primary)' }}>
             {note.title}
           </h4>
+          {note.Folder && (
+            <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
+              in {note.Folder.name}
+            </div>
+          )}
           <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
             <Calendar size={12} />
             <span>

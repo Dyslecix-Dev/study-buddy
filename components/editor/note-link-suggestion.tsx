@@ -6,6 +6,10 @@ import { Editor } from '@tiptap/react'
 export interface Note {
   id: string
   title: string
+  folderId?: string | null
+  Folder?: {
+    name: string
+  } | null
 }
 
 interface NoteLinkSuggestionProps {
@@ -14,9 +18,10 @@ interface NoteLinkSuggestionProps {
   position: { top: number; left: number } | null
   onSelect: (note: Note) => void
   onClose: () => void
+  currentNoteId?: string
 }
 
-export function NoteLinkSuggestion({ editor, query, position, onSelect, onClose }: NoteLinkSuggestionProps) {
+export function NoteLinkSuggestion({ editor, query, position, onSelect, onClose, currentNoteId }: NoteLinkSuggestionProps) {
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -29,7 +34,8 @@ export function NoteLinkSuggestion({ editor, query, position, onSelect, onClose 
 
       setLoading(true)
       try {
-        const response = await fetch(`/api/notes/search?q=${encodeURIComponent(query)}`)
+        const url = `/api/notes/search?q=${encodeURIComponent(query)}${currentNoteId ? `&excludeNoteId=${currentNoteId}` : ''}`
+        const response = await fetch(url)
         if (response.ok) {
           const { notes } = await response.json()
           setNotes(notes)
@@ -43,7 +49,7 @@ export function NoteLinkSuggestion({ editor, query, position, onSelect, onClose 
     }
 
     fetchNotes()
-  }, [query])
+  }, [query, currentNoteId])
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -105,15 +111,31 @@ export function NoteLinkSuggestion({ editor, query, position, onSelect, onClose 
         notes.map((note, index) => (
           <div
             key={note.id}
-            className="px-4 py-2 cursor-pointer text-sm transition-colors"
+            className="px-4 py-2 cursor-pointer transition-colors"
             style={{
               backgroundColor: index === selectedIndex ? 'var(--surface-hover)' : 'transparent',
-              color: index === selectedIndex ? 'var(--primary)' : 'var(--text-primary)',
             }}
             onClick={() => onSelect(note)}
             onMouseEnter={() => setSelectedIndex(index)}
           >
-            {note.title}
+            <div
+              className="text-sm font-medium"
+              style={{
+                color: index === selectedIndex ? 'var(--primary)' : 'var(--text-primary)',
+              }}
+            >
+              {note.title}
+            </div>
+            {note.Folder && (
+              <div
+                className="text-xs mt-0.5"
+                style={{
+                  color: 'var(--text-muted)',
+                }}
+              >
+                in {note.Folder.name}
+              </div>
+            )}
           </div>
         ))
       )}

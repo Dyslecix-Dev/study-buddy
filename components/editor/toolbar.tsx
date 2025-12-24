@@ -32,14 +32,20 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
       }}
       type="button"
       title={title}
-      className={`p-2 rounded hover:bg-gray-200 transition-colors duration-300 cursor-pointer ${isActive ? "bg-gray-300 text-blue-600" : "text-gray-700"}`}
+      className="p-2 rounded transition-colors duration-300 cursor-pointer"
+      style={{
+        backgroundColor: isActive ? 'var(--surface-hover)' : 'transparent',
+        color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+      }}
+      onMouseEnter={(e) => !isActive && (e.currentTarget.style.backgroundColor = 'var(--surface-hover)')}
+      onMouseLeave={(e) => !isActive && (e.currentTarget.style.backgroundColor = 'transparent')}
     >
       {children}
     </button>
   );
 
   return (
-    <div className="flex flex-wrap gap-1 p-2 border-b border-gray-300 bg-gray-50">
+    <div className="flex flex-wrap gap-1 p-2 border-b" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}>
       <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive("bold")} title="Bold (Ctrl+B)">
         <Bold size={18} />
       </ToolbarButton>
@@ -60,7 +66,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
         <Code size={18} />
       </ToolbarButton>
 
-      <div className="w-px h-8 bg-gray-300 mx-1" />
+      <div className="w-px h-8 mx-1" style={{ backgroundColor: 'var(--border)' }} />
 
       <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} isActive={editor.isActive("heading", { level: 1 })} title="Heading 1">
         <Heading1 size={18} />
@@ -74,7 +80,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
         <Heading3 size={18} />
       </ToolbarButton>
 
-      <div className="w-px h-8 bg-gray-300 mx-1" />
+      <div className="w-px h-8 mx-1" style={{ backgroundColor: 'var(--border)' }} />
 
       <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive("bulletList")} title="Bullet List">
         <List size={18} />
@@ -88,7 +94,7 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
         <Quote size={18} />
       </ToolbarButton>
 
-      <div className="w-px h-8 bg-gray-300 mx-1" />
+      <div className="w-px h-8 mx-1" style={{ backgroundColor: 'var(--border)' }} />
 
       <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title="Undo (Ctrl+Z)">
         <Undo size={18} />

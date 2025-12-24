@@ -20,6 +20,7 @@ model Deck {
   User        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   Flashcard   Flashcard[]
 
+  @@unique([userId, name])
   @@index([userId])
 }
 
@@ -54,6 +55,7 @@ model Folder {
   User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   Note        Note[]
 
+  @@unique([userId, name])
   @@index([userId])
 }
 
@@ -71,6 +73,7 @@ model Note {
   NoteLink_NoteLink_toNoteIdToNote   NoteLink[] @relation("NoteLink_toNoteIdToNote")
   Tag                                Tag[]
 
+  @@unique([userId, title])
   @@index([folderId])
   @@index([userId, createdAt])
   @@index([userId])

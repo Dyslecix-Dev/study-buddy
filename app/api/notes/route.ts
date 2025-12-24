@@ -27,7 +27,13 @@ export async function GET(request: NextRequest) {
         content: true,
         createdAt: true,
         updatedAt: true,
+        folderId: true,
         Tag: true,
+        Folder: {
+          select: {
+            name: true,
+          },
+        },
       },
     })
 
@@ -85,6 +91,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ note }, { status: 201 })
   } catch (error: any) {
     console.error('Error creating note:', error)
+
+    // Handle unique constraint violation
+    if (error.code === 'P2002') {
+      return NextResponse.json({ error: 'A note with this title already exists' }, { status: 409 })
+    }
+
     return NextResponse.json({ error: 'Failed to create note' }, { status: 500 })
   }
 }
