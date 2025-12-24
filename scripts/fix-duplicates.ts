@@ -1,10 +1,8 @@
 import { prisma } from '../lib/prisma.ts'
 
 async function fixDuplicates() {
-  console.log('Fixing duplicate folder names...')
-
   // Use raw SQL to rename duplicates efficiently
-  const folderResult = await prisma.$executeRaw`
+  await prisma.$executeRaw`
     WITH ranked_folders AS (
       SELECT
         id,
@@ -19,11 +17,7 @@ async function fixDuplicates() {
     WHERE "Folder".id = rf.id AND rf.rn > 1
   `
 
-  console.log(`  Updated ${folderResult} duplicate folders`)
-
-  console.log('\nFixing duplicate deck names...')
-
-  const deckResult = await prisma.$executeRaw`
+  await prisma.$executeRaw`
     WITH ranked_decks AS (
       SELECT
         id,
@@ -38,11 +32,7 @@ async function fixDuplicates() {
     WHERE "Deck".id = rd.id AND rd.rn > 1
   `
 
-  console.log(`  Updated ${deckResult} duplicate decks`)
-
-  console.log('\nFixing duplicate note titles...')
-
-  const noteResult = await prisma.$executeRaw`
+  await prisma.$executeRaw`
     WITH ranked_notes AS (
       SELECT
         id,
@@ -56,10 +46,6 @@ async function fixDuplicates() {
     FROM ranked_notes rn
     WHERE "Note".id = rn.id AND rn.rn > 1
   `
-
-  console.log(`  Updated ${noteResult} duplicate notes`)
-
-  console.log('\nDuplicate cleanup complete!')
 }
 
 fixDuplicates()

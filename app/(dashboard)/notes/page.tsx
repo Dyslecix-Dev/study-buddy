@@ -61,7 +61,6 @@ export default function NotesPage() {
         setFolders(data);
       }
     } catch (error) {
-      console.error("Error fetching folders:", error);
       toast.error("Failed to load folders");
     } finally {
       setLoading(false);
@@ -96,7 +95,6 @@ export default function NotesPage() {
         toast.error(editingFolder ? "Failed to update folder" : "Failed to create folder");
       }
     } catch (error) {
-      console.error("Error saving folder:", error);
       toast.error("An error occurred");
     }
   };
@@ -130,7 +128,6 @@ export default function NotesPage() {
         toast.error("Failed to delete folder");
       }
     } catch (error) {
-      console.error("Error deleting folder:", error);
       toast.error("An error occurred");
     } finally {
       setDeleteConfirm(null);

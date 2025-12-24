@@ -71,7 +71,6 @@ export default function FolderDetailPage() {
         router.push("/notes");
       }
     } catch (error) {
-      console.error("Error fetching folder:", error);
       toast.error("Failed to load folder");
     } finally {
       setLoading(false);
@@ -97,7 +96,6 @@ export default function FolderDetailPage() {
         toast.error("Failed to delete note");
       }
     } catch (error) {
-      console.error("Error deleting note:", error);
       toast.error("An error occurred");
     } finally {
       setDeleteConfirm(null);

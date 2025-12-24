@@ -42,7 +42,7 @@ export function NoteLinkSuggestion({ editor, query, position, onSelect, onClose,
           setSelectedIndex(0)
         }
       } catch (error) {
-        console.error('Error fetching notes:', error)
+        // Silently fail
       } finally {
         setLoading(false)
       }

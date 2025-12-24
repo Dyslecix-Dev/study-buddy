@@ -70,7 +70,7 @@ export function UnlinkedMentions({ currentNoteId, content, onLinkAll }: Unlinked
 
         setMentions(unlinked);
       } catch (error) {
-        console.error("Error finding unlinked mentions:", error);
+        // Silently fail
       } finally {
         setLoading(false);
       }

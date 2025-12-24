@@ -320,8 +320,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
       // Auto-play the new track if music was playing or should be playing
       if (shouldAutoPlay && isMusicEnabled) {
-        audio.play().catch((error) => {
-          console.log("Audio play prevented:", error);
+        audio.play().catch(() => {
           setIsMusicPlaying(false);
         });
       }
@@ -355,9 +354,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
     // Sync playback state
     if (isMusicEnabled && isMusicPlaying && audio.paused) {
-      audio.play().catch((error) => {
-        console.log("Audio play prevented:", error);
-      });
+      audio.play().catch(() => {});
     } else if (!isMusicPlaying && !audio.paused) {
       audio.pause();
     } else if (!isMusicEnabled && !audio.paused) {

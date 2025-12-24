@@ -49,6 +49,10 @@ export function ProgressDashboard() {
       if (response.ok) {
         const data = await response.json();
         setStats(data);
+      } else {
+        console.error("Failed to fetch dashboard stats:", response.status, response.statusText);
+        const errorData = await response.text();
+        console.error("Error response:", errorData);
       }
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);

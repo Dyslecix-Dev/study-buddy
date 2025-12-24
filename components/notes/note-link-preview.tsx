@@ -23,7 +23,7 @@ export function NoteLinkPreview({ noteId, position, onClose }: NoteLinkPreviewPr
           setNote(note)
         }
       } catch (error) {
-        console.error('Error fetching note preview:', error)
+        // Silently fail
       } finally {
         setLoading(false)
       }

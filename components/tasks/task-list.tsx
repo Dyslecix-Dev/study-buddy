@@ -9,6 +9,8 @@ interface Task {
   description: string | null;
   completed: boolean;
   dueDate: Date | null;
+  startTime: Date | null;
+  endTime: Date | null;
   priority: number;
   order: number;
 }

@@ -239,7 +239,6 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
       setSaved(false);
       toast.success(`Removed ${brokenNoteIds.size} broken link${brokenNoteIds.size > 1 ? 's' : ''}`);
     } catch (error) {
-      console.error('Error removing broken links:', error);
       toast.error('Failed to remove broken links');
     }
   };

@@ -51,7 +51,6 @@ export default function TagsPage() {
         setTags(data);
       }
     } catch (error) {
-      console.error("Error fetching tags:", error);
       toast.error("Failed to load tags");
     } finally {
       setLoading(false);
@@ -82,7 +81,6 @@ export default function TagsPage() {
         toast.error("Failed to create tag");
       }
     } catch (error) {
-      console.error("Error creating tag:", error);
       toast.error("Failed to create tag");
     }
   };
