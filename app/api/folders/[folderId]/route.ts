@@ -119,10 +119,56 @@ export async function DELETE(request: NextRequest, { params }: { params: Params 
       return NextResponse.json({ error: "Folder not found" }, { status: 404 });
     }
 
+    // Get all notes in this folder with their tags
+    const notesInFolder = await prisma.note.findMany({
+      where: { folderId: folderId },
+      include: {
+        Tag: {
+          select: { id: true },
+        },
+      },
+    });
+
+    // Collect all tag IDs from notes in this folder
+    const tagIds = new Set<string>();
+    notesInFolder.forEach((note) => {
+      note.Tag.forEach((tag) => {
+        tagIds.add(tag.id);
+      });
+    });
+
     // Delete all notes in this folder
     await prisma.note.deleteMany({
       where: { folderId: folderId },
     });
+
+    // Clean up orphaned tags
+    for (const tagId of tagIds) {
+      const tagWithUsage = await prisma.tag.findUnique({
+        where: { id: tagId },
+        include: {
+          _count: {
+            select: {
+              Note: true,
+              Task: true,
+              Flashcard: true,
+            },
+          },
+        },
+      });
+
+      if (tagWithUsage) {
+        const totalUsage =
+          tagWithUsage._count.Note +
+          tagWithUsage._count.Task +
+          tagWithUsage._count.Flashcard;
+        if (totalUsage === 0) {
+          await prisma.tag.delete({
+            where: { id: tagId },
+          });
+        }
+      }
+    }
 
     // Delete the folder
     await prisma.folder.delete({

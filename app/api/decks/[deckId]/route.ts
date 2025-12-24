@@ -113,11 +113,20 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Verify the deck belongs to the user
+    // Verify the deck belongs to the user and get all flashcards with tags
     const existingDeck = await prisma.deck.findFirst({
       where: {
         id: deckId,
         userId: user.id,
+      },
+      include: {
+        Flashcard: {
+          include: {
+            Tag: {
+              select: { id: true },
+            },
+          },
+        },
       },
     })
 
@@ -125,9 +134,46 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Deck not found' }, { status: 404 })
     }
 
+    // Collect all tag IDs from flashcards in this deck
+    const tagIds = new Set<string>()
+    existingDeck.Flashcard.forEach((flashcard) => {
+      flashcard.Tag.forEach((tag) => {
+        tagIds.add(tag.id)
+      })
+    })
+
+    // Delete the deck (this will cascade delete all flashcards)
     await prisma.deck.delete({
       where: { id: deckId },
     })
+
+    // Clean up orphaned tags
+    for (const tagId of tagIds) {
+      const tagWithUsage = await prisma.tag.findUnique({
+        where: { id: tagId },
+        include: {
+          _count: {
+            select: {
+              Note: true,
+              Task: true,
+              Flashcard: true,
+            },
+          },
+        },
+      })
+
+      if (tagWithUsage) {
+        const totalUsage =
+          tagWithUsage._count.Note +
+          tagWithUsage._count.Task +
+          tagWithUsage._count.Flashcard
+        if (totalUsage === 0) {
+          await prisma.tag.delete({
+            where: { id: tagId },
+          })
+        }
+      }
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
