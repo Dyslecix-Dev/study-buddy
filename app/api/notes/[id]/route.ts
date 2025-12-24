@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { incrementDailyProgress } from '@/lib/progress-tracker'
+import { logNoteUpdated, logNoteDeleted } from '@/lib/activity-logger'
 
 // GET - Get a single note
 export async function GET(
@@ -230,6 +232,12 @@ export async function PATCH(
       }
     }
 
+    // Track progress - note updated
+    await incrementDailyProgress(user.id, 'noteUpdated')
+
+    // Log activity
+    await logNoteUpdated(user.id, note.id, note.title)
+
     // Format the response to include linked notes and backlinks
     const linkedNotes = note.NoteLink_NoteLink_fromNoteIdToNote.map(link => link.Note_NoteLink_toNoteIdToNote)
     const backlinks = note.NoteLink_NoteLink_toNoteIdToNote.map(link => link.Note_NoteLink_fromNoteIdToNote)
@@ -292,6 +300,9 @@ export async function DELETE(
     })
 
     const tagIds = noteWithTags?.Tag.map(t => t.id) || []
+
+    // Log activity before deletion
+    await logNoteDeleted(user.id, existingNote.title)
 
     await prisma.note.delete({
       where: { id },

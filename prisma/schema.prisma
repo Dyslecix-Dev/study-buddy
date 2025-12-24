@@ -166,21 +166,56 @@ model FocusSession {
   @@index([userId, completedAt])
 }
 
+model DailyProgress {
+  id             String   @id @default(uuid())
+  userId         String
+  date           DateTime
+  tasksCompleted Int      @default(0)
+  cardsReviewed  Int      @default(0)
+  notesCreated   Int      @default(0)
+  notesUpdated   Int      @default(0)
+  focusMinutes   Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  User           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@index([userId])
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // 'note_created', 'note_updated', 'note_deleted', 'task_created', 'task_completed', etc.
+  entityType  String   // 'note', 'task', 'folder', 'deck', 'flashcard', 'focus_session'
+  entityId    String?  // ID of the related entity (nullable for deleted items)
+  title       String   // Display title for the activity
+  metadata    Json?    // Additional data (e.g., duration for focus sessions, folder name, etc.)
+  createdAt   DateTime @default(now())
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId])
+}
+
 model User {
-  id            String         @id
-  email         String         @unique
-  name          String?
-  image         String?
-  emailVerified DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  Deck          Deck[]
-  Folder        Folder[]
-  FocusSession  FocusSession[]
-  Note          Note[]
-  StudySession  StudySession[]
-  Tag           Tag[]
-  Task          Task[]
+  id             String          @id
+  email          String          @unique
+  name           String?
+  image          String?
+  emailVerified  DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  ActivityLog    ActivityLog[]
+  DailyProgress  DailyProgress[]
+  Deck           Deck[]
+  Folder         Folder[]
+  FocusSession   FocusSession[]
+  Note           Note[]
+  StudySession   StudySession[]
+  Tag            Tag[]
+  Task           Task[]
 
   @@index([email])
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { logTaskCreated } from '@/lib/activity-logger'
 
 // GET /api/tasks - Get all tasks for the current user
 export async function GET(request: NextRequest) {
@@ -96,6 +97,9 @@ export async function POST(request: NextRequest) {
         Tag: true,
       },
     })
+
+    // Log activity
+    await logTaskCreated(user.id, task.id, task.title)
 
     return NextResponse.json(task, { status: 201 })
   } catch (error) {

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { incrementDailyProgress } from '@/lib/progress-tracker'
+import { logNoteCreated } from '@/lib/activity-logger'
 
 // GET - List all notes for the authenticated user
 export async function GET(request: NextRequest) {
@@ -87,6 +89,12 @@ export async function POST(request: NextRequest) {
         skipDuplicates: true,
       })
     }
+
+    // Track progress - note created
+    await incrementDailyProgress(user.id, 'noteCreated')
+
+    // Log activity
+    await logNoteCreated(user.id, note.id, note.title)
 
     return NextResponse.json({ note }, { status: 201 })
   } catch (error: any) {

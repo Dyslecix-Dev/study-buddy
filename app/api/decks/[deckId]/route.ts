@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { logDeckUpdated, logDeckDeleted } from '@/lib/activity-logger'
 
 type Params = {
   params: Promise<{
@@ -93,6 +94,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       },
     })
 
+    // Log activity
+    await logDeckUpdated(user.id, deck.id, deck.name)
+
     return NextResponse.json(deck)
   } catch (error) {
     console.error('Error updating deck:', error)
@@ -141,6 +145,9 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
         tagIds.add(tag.id)
       })
     })
+
+    // Log activity before deletion
+    await logDeckDeleted(user.id, existingDeck.name)
 
     // Delete the deck (this will cascade delete all flashcards)
     await prisma.deck.delete({

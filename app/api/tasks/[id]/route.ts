@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { incrementDailyProgress, decrementDailyProgress } from '@/lib/progress-tracker'
+import { logTaskCompleted, logTaskUncompleted, logTaskDeleted } from '@/lib/activity-logger'
 
 type Params = {
   params: Promise<{
@@ -90,6 +92,19 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     if (priority !== undefined) updateData.priority = priority
     if (order !== undefined) updateData.order = order
+
+    // Track progress when task completion status changes
+    if (completed !== undefined && completed !== existingTask.completed) {
+      if (completed) {
+        // Task is being completed
+        await incrementDailyProgress(user.id, 'taskCompleted')
+        await logTaskCompleted(user.id, id, existingTask.title)
+      } else {
+        // Task is being uncompleted - decrement the count
+        await decrementDailyProgress(user.id, 'taskCompleted', existingTask.updatedAt)
+        await logTaskUncompleted(user.id, id, existingTask.title)
+      }
+    }
 
     // Handle tag updates
     let removedTagIds: string[] = []
@@ -190,6 +205,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     })
 
     const tagIds = taskWithTags?.Tag.map(t => t.id) || []
+
+    // Log activity before deletion
+    await logTaskDeleted(user.id, existingTask.title)
 
     await prisma.task.delete({
       where: { id },

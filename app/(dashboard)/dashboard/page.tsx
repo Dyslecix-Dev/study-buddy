@@ -36,8 +36,13 @@ export default async function DashboardPage() {
     },
   });
 
+  // Check if user has any focus sessions
+  const focusSessionCount = await prisma.focusSession.count({
+    where: { userId: user.id },
+  });
+
   // Check if user has any activity (to determine if we should show the progress dashboard)
-  const hasActivity = noteCount > 0 || taskCount > 0 || flashcardCount > 0;
+  const hasActivity = noteCount > 0 || taskCount > 0 || flashcardCount > 0 || focusSessionCount > 0;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>

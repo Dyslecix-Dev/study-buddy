@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
       totalFlashcards,
       totalDecks,
       reviewsCount,
+      totalFocusMinutes,
       focusSessions,
       studySessions,
       recentActivity,
@@ -65,14 +66,16 @@ export async function GET(request: NextRequest) {
         where: { userId: user.id },
       }),
 
-      // Completed tasks in period
-      prisma.task.count({
+      // Completed tasks in period - use DailyProgress for permanent tracking
+      prisma.dailyProgress.aggregate({
         where: {
           userId: user.id,
-          completed: true,
-          updatedAt: { gte: periodStart },
+          date: { gte: periodStart },
         },
-      }),
+        _sum: {
+          tasksCompleted: true,
+        },
+      }).then(result => result._sum.tasksCompleted || 0),
 
       // Total flashcards
       prisma.flashcard.count({
@@ -88,19 +91,29 @@ export async function GET(request: NextRequest) {
         where: { userId: user.id },
       }),
 
-      // Reviews in period
-      prisma.review.count({
+      // Reviews in period - use DailyProgress for permanent tracking
+      prisma.dailyProgress.aggregate({
         where: {
-          Flashcard: {
-            Deck: {
-              userId: user.id,
-            },
-          },
-          createdAt: { gte: periodStart },
+          userId: user.id,
+          date: { gte: periodStart },
         },
-      }),
+        _sum: {
+          cardsReviewed: true,
+        },
+      }).then(result => result._sum.cardsReviewed || 0),
 
-      // Focus sessions
+      // Focus minutes in period - use DailyProgress for permanent tracking
+      prisma.dailyProgress.aggregate({
+        where: {
+          userId: user.id,
+          date: { gte: periodStart },
+        },
+        _sum: {
+          focusMinutes: true,
+        },
+      }).then(result => result._sum.focusMinutes || 0),
+
+      // Focus sessions (for recent activity display)
       prisma.focusSession.findMany({
         where: {
           userId: user.id,
@@ -118,31 +131,13 @@ export async function GET(request: NextRequest) {
         orderBy: { startedAt: 'desc' },
       }),
 
-      // Recent activity (last 10 items)
-      Promise.all([
-        prisma.note.findMany({
-          where: { userId: user.id },
-          select: { id: true, title: true, createdAt: true, updatedAt: true },
-          orderBy: { updatedAt: 'desc' },
-          take: 5,
-        }),
-        prisma.task.findMany({
-          where: { userId: user.id, completed: true, updatedAt: { gte: periodStart } },
-          select: { id: true, title: true, updatedAt: true },
-          orderBy: { updatedAt: 'desc' },
-          take: 5,
-        }),
-        prisma.deck.findMany({
-          where: { userId: user.id },
-          select: { id: true, name: true, updatedAt: true },
-          orderBy: { updatedAt: 'desc' },
-          take: 5,
-        }),
-      ]),
+      // Recent activity from ActivityLog (last 20 items)
+      prisma.activityLog.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
     ])
-
-    // Calculate total focus time
-    const totalFocusMinutes = focusSessions.reduce((sum, session) => sum + session.duration, 0)
 
     // Calculate total study time
     const totalStudyMinutes = studySessions.reduce((sum, session) => sum + session.duration, 0)
@@ -153,29 +148,29 @@ export async function GET(request: NextRequest) {
     // Prepare activity chart data
     const activityData = await prepareActivityChartData(user.id, periodStart, now, period)
 
-    // Combine and format recent activity
-    const combinedActivity = [
-      ...recentActivity[0].map(note => ({
-        id: note.id,
-        type: 'note' as const,
-        title: note.title,
-        timestamp: note.updatedAt,
+    console.log(`📊 Dashboard stats for ${period}:`, {
+      totalFocusMinutes,
+      completedTasks,
+      reviewsCount,
+      streak,
+      activityData: activityData.map(d => ({
+        date: d.date,
+        focusMinutes: d.focusMinutes,
+        tasksCompleted: d.tasksCompleted,
+        cardsReviewed: d.cardsReviewed,
       })),
-      ...recentActivity[1].map(task => ({
-        id: task.id,
-        type: 'task' as const,
-        title: task.title,
-        timestamp: task.updatedAt,
-      })),
-      ...recentActivity[2].map(deck => ({
-        id: deck.id,
-        type: 'deck' as const,
-        title: deck.name,
-        timestamp: deck.updatedAt,
-      })),
-    ]
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 10)
+    })
+
+    // Format activity log for frontend
+    const formattedActivity = recentActivity.map(activity => ({
+      id: activity.id,
+      type: activity.type,
+      entityType: activity.entityType,
+      entityId: activity.entityId,
+      title: activity.title,
+      timestamp: activity.createdAt,
+      metadata: activity.metadata,
+    }))
 
     return NextResponse.json({
       period,
@@ -191,7 +186,7 @@ export async function GET(request: NextRequest) {
         streak,
       },
       activityData,
-      recentActivity: combinedActivity,
+      recentActivity: formattedActivity,
       focusSessions: focusSessions.slice(0, 10),
     })
   } catch (error) {
@@ -209,8 +204,8 @@ async function calculateStreak(userId: string, currentDate: Date): Promise<numbe
   while (true) {
     const dayEnd = new Date(checkDate.getTime() + 24 * 60 * 60 * 1000)
 
-    // Count ANY activity on this day
-    const [focusSessions, reviews, completedTasks, updatedNotes] = await Promise.all([
+    // Count ANY activity on this day using DailyProgress and FocusSession
+    const [focusSessions, dailyProgress, updatedNotes] = await Promise.all([
       prisma.focusSession.count({
         where: {
           userId,
@@ -220,26 +215,11 @@ async function calculateStreak(userId: string, currentDate: Date): Promise<numbe
           },
         },
       }),
-      prisma.review.count({
+      prisma.dailyProgress.findUnique({
         where: {
-          Flashcard: {
-            Deck: {
-              userId,
-            },
-          },
-          createdAt: {
-            gte: checkDate,
-            lt: dayEnd,
-          },
-        },
-      }),
-      prisma.task.count({
-        where: {
-          userId,
-          completed: true,
-          updatedAt: {
-            gte: checkDate,
-            lt: dayEnd,
+          userId_date: {
+            userId,
+            date: checkDate,
           },
         },
       }),
@@ -254,7 +234,10 @@ async function calculateStreak(userId: string, currentDate: Date): Promise<numbe
       }),
     ])
 
-    const activityOnDay = focusSessions + reviews + completedTasks + updatedNotes
+    const progressActivity = dailyProgress
+      ? (dailyProgress.tasksCompleted + dailyProgress.cardsReviewed + dailyProgress.notesCreated + dailyProgress.notesUpdated)
+      : 0
+    const activityOnDay = focusSessions + progressActivity + updatedNotes
     const isToday = checkDate.getTime() === startOfDay(currentDate).getTime()
 
     if (activityOnDay > 0) {
@@ -292,42 +275,23 @@ async function prepareActivityChartData(
   const dailyData = await Promise.all(
     days.map(async (day) => {
       const dayStart = startOfDay(day)
-      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000)
 
-      const [focusSessions, tasks, reviews] = await Promise.all([
-        prisma.focusSession.findMany({
-          where: {
+      // Get progress data from DailyProgress table for permanent tracking
+      const dailyProgress = await prisma.dailyProgress.findUnique({
+        where: {
+          userId_date: {
             userId,
-            completedAt: { gte: dayStart, lt: dayEnd },
+            date: dayStart,
           },
-        }),
-        prisma.task.count({
-          where: {
-            userId,
-            completed: true,
-            updatedAt: { gte: dayStart, lt: dayEnd },
-          },
-        }),
-        prisma.review.count({
-          where: {
-            Flashcard: {
-              Deck: {
-                userId,
-              },
-            },
-            createdAt: { gte: dayStart, lt: dayEnd },
-          },
-        }),
-      ])
-
-      const focusMinutes = focusSessions.reduce((sum, session) => sum + session.duration, 0)
+        },
+      })
 
       return {
         date: format(day, 'MMM dd'),
         fullDate: format(day, 'yyyy-MM-dd'),
-        focusMinutes,
-        tasksCompleted: tasks,
-        cardsReviewed: reviews,
+        focusMinutes: dailyProgress?.focusMinutes || 0,
+        tasksCompleted: dailyProgress?.tasksCompleted || 0,
+        cardsReviewed: dailyProgress?.cardsReviewed || 0,
       }
     })
   )

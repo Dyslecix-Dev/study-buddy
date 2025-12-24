@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { logFlashcardCreated } from '@/lib/activity-logger'
 
 type Params = {
   params: Promise<{
@@ -93,6 +94,9 @@ export async function POST(request: NextRequest, { params }: Params) {
         Tag: true,
       },
     })
+
+    // Log activity
+    await logFlashcardCreated(user.id, flashcard.id, deck.name)
 
     return NextResponse.json(flashcard, { status: 201 })
   } catch (error) {

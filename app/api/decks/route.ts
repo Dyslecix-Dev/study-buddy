@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { logDeckCreated } from '@/lib/activity-logger'
 
 // GET /api/decks - Get all decks for the current user
 export async function GET() {
@@ -40,7 +41,6 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      console.error('POST /api/decks - Unauthorized: No user found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -48,11 +48,8 @@ export async function POST(request: NextRequest) {
     const { name, description, color } = body
 
     if (!name) {
-      console.error('POST /api/decks - Bad request: Name is required')
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
-
-    console.log('Creating deck for user:', user.id, 'with data:', { name, description, color })
 
     const deck = await prisma.deck.create({
       data: {
@@ -68,14 +65,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log('Deck created successfully:', deck.id)
+    // Log activity
+    await logDeckCreated(user.id, deck.id, deck.name)
+
     return NextResponse.json(deck, { status: 201 })
   } catch (error: any) {
     console.error('Error creating deck:', error)
-    if (error instanceof Error) {
-      console.error('Error message:', error.message)
-      console.error('Error stack:', error.stack)
-    }
 
     // Handle unique constraint violation
     if (error.code === 'P2002') {

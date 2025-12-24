@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { calculateNextReview, mapRatingToQuality } from '@/lib/spaced-repetition'
+import { incrementDailyProgress } from '@/lib/progress-tracker'
+import { logFlashcardReviewed } from '@/lib/activity-logger'
 
 type Params = {
   params: Promise<{
@@ -88,6 +90,12 @@ export async function POST(request: NextRequest, { params }: Params) {
         lastReviewed: new Date(),
       },
     })
+
+    // Track progress - card has been reviewed
+    await incrementDailyProgress(user.id, 'cardReviewed')
+
+    // Log activity
+    await logFlashcardReviewed(user.id, flashcardId, deck.name)
 
     return NextResponse.json(
       {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
+import { logFolderCreated } from "@/lib/activity-logger";
 
 // GET /api/folders - Get all folders for the current user
 export async function GET() {
@@ -27,7 +28,6 @@ export async function GET() {
 
     return NextResponse.json(folders);
   } catch (error) {
-    console.error("Error fetching folders:", error);
     return NextResponse.json({ error: "Failed to fetch folders" }, { status: 500 });
   }
 }
@@ -66,6 +66,9 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Log activity
+    await logFolderCreated(user.id, folder.id, folder.name);
 
     return NextResponse.json(folder, { status: 201 });
   } catch (error: any) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { logFolderUpdated, logFolderDeleted } from "@/lib/activity-logger";
 
 type Params = Promise<{
   folderId: string;
@@ -87,6 +88,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
       },
     });
 
+    // Log activity
+    await logFolderUpdated(user.id, folder.id, folder.name);
+
     return NextResponse.json(folder);
   } catch (error) {
     console.error("Error updating folder:", error);
@@ -169,6 +173,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Params 
         }
       }
     }
+
+    // Log activity before deletion
+    await logFolderDeleted(user.id, existingFolder.name);
 
     // Delete the folder
     await prisma.folder.delete({
