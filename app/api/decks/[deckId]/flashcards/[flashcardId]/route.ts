@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { deleteFlashcardImages } from '@/lib/blob-cleanup'
 
 type Params = {
   params: Promise<{
@@ -191,6 +192,9 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
     await prisma.flashcard.delete({
       where: { id: flashcardId },
     })
+
+    // Clean up associated images from Vercel Blob
+    await deleteFlashcardImages(user.id, flashcardId)
 
     // Clean up unused tags
     for (const tagId of tagIds) {

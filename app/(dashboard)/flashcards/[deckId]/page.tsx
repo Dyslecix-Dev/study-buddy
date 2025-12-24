@@ -67,6 +67,21 @@ function filterByTags(card: Flashcard, tagFilter: string[]) {
   return tagFilter.some((tagId) => card.Tag!.some((tag) => tag.id === tagId));
 }
 
+// Helper function to render HTML content with images
+function renderHTMLPreview(content: string) {
+  // Check if content is HTML (contains tags)
+  if (typeof content === 'string' && content.includes('<')) {
+    return (
+      <div
+        className="text-sm text-black line-clamp-3 prose prose-sm max-w-full [&_img]:inline-block [&_img]:max-h-16 [&_img]:w-auto [&_img]:rounded [&_img]:mr-2"
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    );
+  }
+  // Plain text fallback
+  return <p className="text-sm text-black line-clamp-3">{content}</p>;
+}
+
 // Helper function to get card status and colors
 function getCardStatus(card: Flashcard) {
   const isDue = isDueForReview(card.nextReview);
@@ -546,13 +561,13 @@ export default function DeckDetailPage({ params }: { params: Promise<{ deckId: s
                       <p className="text-xs mb-1 uppercase font-semibold" style={{ color: status.color }}>
                         Front
                       </p>
-                      <p className="text-sm text-black line-clamp-3">{card.front}</p>
+                      {renderHTMLPreview(card.front)}
                     </div>
                     <div className="mb-3">
                       <p className="text-xs mb-1 uppercase font-semibold" style={{ color: status.color }}>
                         Back
                       </p>
-                      <p className="text-sm text-black line-clamp-3">{card.back}</p>
+                      {renderHTMLPreview(card.back)}
                     </div>
                     {card.Tag && card.Tag.length > 0 && (
                       <div className="flex flex-wrap gap-1">

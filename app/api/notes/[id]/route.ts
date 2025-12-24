@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { incrementDailyProgress } from '@/lib/progress-tracker'
 import { logNoteUpdated, logNoteDeleted } from '@/lib/activity-logger'
+import { deleteNoteImages } from '@/lib/blob-cleanup'
 
 // GET - Get a single note
 export async function GET(
@@ -307,6 +308,9 @@ export async function DELETE(
     await prisma.note.delete({
       where: { id },
     })
+
+    // Clean up associated images from Vercel Blob
+    await deleteNoteImages(user.id, id)
 
     // Clean up unused tags
     for (const tagId of tagIds) {

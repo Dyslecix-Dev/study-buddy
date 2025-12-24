@@ -4,17 +4,28 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { Tag } from "@/lib/tag-utils";
 import TagInput from "@/components/tags/tag-input";
+import Editor from "@/components/editor/editor";
 
 interface FlashcardFormProps {
   onSubmit: (data: { front: string; back: string; tagIds?: string[] }) => Promise<void>;
   onCancel: () => void;
-  initialData?: { front: string; back: string; Tag?: Tag[] };
+  initialData?: { front: string; back: string; Tag?: Tag[]; id?: string };
   isEdit?: boolean;
 }
 
 export default function FlashcardForm({ onSubmit, onCancel, initialData, isEdit = false }: FlashcardFormProps) {
-  const [front, setFront] = useState(initialData?.front || "");
-  const [back, setBack] = useState(initialData?.back || "");
+  // Helper to convert string to TipTap JSON or keep JSON as-is
+  const convertToEditorFormat = (content: string | any): string => {
+    if (typeof content === 'string') {
+      // Legacy string format - convert to HTML for TipTap
+      return `<p>${content}</p>`;
+    }
+    // Already in JSON/HTML format from TipTap
+    return content;
+  };
+
+  const [front, setFront] = useState(convertToEditorFormat(initialData?.front || ""));
+  const [back, setBack] = useState(convertToEditorFormat(initialData?.back || ""));
   const [selectedTags, setSelectedTags] = useState<Tag[]>(initialData?.Tag || []);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ front?: string; back?: string }>({});
@@ -22,10 +33,13 @@ export default function FlashcardForm({ onSubmit, onCancel, initialData, isEdit 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate
+    // Validate - check if content is empty (just <p></p> or similar)
     const newErrors: { front?: string; back?: string } = {};
-    if (!front.trim()) newErrors.front = "Front is required";
-    if (!back.trim()) newErrors.back = "Back is required";
+    const frontText = front.replace(/<[^>]*>/g, '').trim();
+    const backText = back.replace(/<[^>]*>/g, '').trim();
+
+    if (!frontText) newErrors.front = "Front is required";
+    if (!backText) newErrors.back = "Back is required";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -37,12 +51,12 @@ export default function FlashcardForm({ onSubmit, onCancel, initialData, isEdit 
 
     try {
       await onSubmit({
-        front: front.trim(),
-        back: back.trim(),
+        front,
+        back,
         tagIds: selectedTags.map((tag) => tag.id),
       });
-      setFront("");
-      setBack("");
+      setFront("<p></p>");
+      setBack("<p></p>");
       setSelectedTags([]);
     } finally {
       setLoading(false);
@@ -62,33 +76,31 @@ export default function FlashcardForm({ onSubmit, onCancel, initialData, isEdit 
 
       <div className="space-y-4">
         <div>
-          <label htmlFor="front" className="block text-sm font-medium mb-1" style={{ color: "var(--text-primary)" }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: "var(--text-primary)" }}>
             Front (Question) *
           </label>
-          <textarea
-            id="front"
-            value={front}
-            onChange={(e) => setFront(e.target.value)}
-            rows={3}
+          <Editor
+            content={front}
+            onChange={setFront}
             placeholder="Enter the question or prompt..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            style={{ color: "var(--text-primary)" }}
+            entityType="flashcard"
+            entityId={initialData?.id || 'new'}
+            flashcardSide="front"
           />
           {errors.front && <p className="mt-1 text-sm text-red-600">{errors.front}</p>}
         </div>
 
         <div>
-          <label htmlFor="back" className="block text-sm font-medium mb-1" style={{ color: "var(--text-primary)" }}>
+          <label className="block text-sm font-medium mb-2" style={{ color: "var(--text-primary)" }}>
             Back (Answer) *
           </label>
-          <textarea
-            id="back"
-            value={back}
-            onChange={(e) => setBack(e.target.value)}
-            rows={3}
+          <Editor
+            content={back}
+            onChange={setBack}
             placeholder="Enter the answer..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            style={{ color: "var(--text-primary)" }}
+            entityType="flashcard"
+            entityId={initialData?.id || 'new'}
+            flashcardSide="back"
           />
           {errors.back && <p className="mt-1 text-sm text-red-600">{errors.back}</p>}
         </div>

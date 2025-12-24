@@ -1,15 +1,18 @@
 "use client";
 
 import { Editor } from "@tiptap/react";
-import { useState, useEffect } from "react";
-import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, Quote, Heading1, Heading2, Heading3, Undo, Redo } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, Quote, Heading1, Heading2, Heading3, Undo, Redo, Image as ImageIcon, Loader2 } from "lucide-react";
 
 interface EditorToolbarProps {
   editor: Editor;
+  onImageUpload?: (file: File) => Promise<string | null>;
+  isUploadingImage?: boolean;
 }
 
-export default function EditorToolbar({ editor }: EditorToolbarProps) {
+export default function EditorToolbar({ editor, onImageUpload, isUploadingImage = false }: EditorToolbarProps) {
   const [, setUpdateTrigger] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const updateToolbar = () => {
@@ -24,6 +27,38 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
       editor.off("transaction", updateToolbar);
     };
   }, [editor]);
+
+  const handleImageButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB');
+      return;
+    }
+
+    if (onImageUpload) {
+      const url = await onImageUpload(file);
+      if (url) {
+        editor.chain().focus().setImage({ src: url }).run();
+      }
+    }
+
+    // Reset input
+    event.target.value = '';
+  };
+
   const ToolbarButton = ({ onClick, isActive = false, children, title }: { onClick: () => void; isActive?: boolean; children: React.ReactNode; title: string }) => (
     <button
       onClick={(e) => {
@@ -103,6 +138,29 @@ export default function EditorToolbar({ editor }: EditorToolbarProps) {
       <ToolbarButton onClick={() => editor.chain().focus().redo().run()} title="Redo (Ctrl+Shift+Z)">
         <Redo size={18} />
       </ToolbarButton>
+
+      {onImageUpload && (
+        <>
+          <div className="w-px h-8 mx-1" style={{ backgroundColor: 'var(--border)' }} />
+
+          <ToolbarButton
+            onClick={handleImageButtonClick}
+            isActive={false}
+            title="Insert Image"
+          >
+            {isUploadingImage ? <Loader2 size={18} className="animate-spin" /> : <ImageIcon size={18} />}
+          </ToolbarButton>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+            onChange={handleImageSelect}
+            className="hidden"
+            disabled={isUploadingImage}
+          />
+        </>
+      )}
     </div>
   );
 }

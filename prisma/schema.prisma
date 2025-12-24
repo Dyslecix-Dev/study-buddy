@@ -26,8 +26,8 @@ model Deck {
 
 model Flashcard {
   id           String    @id @default(uuid())
-  front        String
-  back         String
+  front        Json
+  back         Json
   deckId       String
   easeFactor   Float     @default(2.5)
   interval     Int       @default(0)

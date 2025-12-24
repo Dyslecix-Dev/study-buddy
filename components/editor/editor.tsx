@@ -21,15 +21,30 @@ interface EditorProps {
   placeholder?: string
   editable?: boolean
   currentNoteId?: string
+  entityType?: 'note' | 'flashcard'
+  entityId?: string
+  flashcardSide?: 'front' | 'back'
 }
 
-export default function Editor({ content, onChange, onNoteLinksChange, onNoteLinkClick, placeholder = 'Start writing...', editable = true, currentNoteId }: EditorProps) {
+export default function Editor({
+  content,
+  onChange,
+  onNoteLinksChange,
+  onNoteLinkClick,
+  placeholder = 'Start writing...',
+  editable = true,
+  currentNoteId,
+  entityType,
+  entityId,
+  flashcardSide
+}: EditorProps) {
   const router = useRouter()
   const [suggestionQuery, setSuggestionQuery] = useState<string>('')
   const [suggestionPosition, setSuggestionPosition] = useState<{ top: number; left: number } | null>(null)
   const [suggestionRange, setSuggestionRange] = useState<{ from: number; to: number } | null>(null)
   const [previewNoteId, setPreviewNoteId] = useState<string | null>(null)
   const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number } | null>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -38,6 +53,43 @@ export default function Editor({ content, onChange, onNoteLinksChange, onNoteLin
       onNoteLinkClick(noteId, noteTitle)
     }
   }, [onNoteLinkClick])
+
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!entityType || !entityId) {
+      console.error('Cannot upload image: entityType and entityId are required')
+      return null
+    }
+
+    setIsUploadingImage(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('entityType', entityType)
+      formData.append('entityId', entityId)
+      if (flashcardSide) {
+        formData.append('side', flashcardSide)
+      }
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to upload image')
+      }
+
+      const data = await response.json()
+      return data.url
+    } catch (error) {
+      console.error('Image upload failed:', error)
+      alert(error instanceof Error ? error.message : 'Failed to upload image')
+      return null
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }, [entityType, entityId, flashcardSide])
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -239,7 +291,13 @@ export default function Editor({ content, onChange, onNoteLinksChange, onNoteLin
   return (
     <div className="relative">
       <div className="border rounded-lg overflow-hidden" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--surface)' }}>
-        {editable && <EditorToolbar editor={editor} />}
+        {editable && (
+          <EditorToolbar
+            editor={editor}
+            onImageUpload={entityType && entityId ? handleImageUpload : undefined}
+            isUploadingImage={isUploadingImage}
+          />
+        )}
         <div style={{ color: 'var(--text-primary)' }}>
           <EditorContent editor={editor} />
         </div>
