@@ -78,16 +78,13 @@ export default function FlashcardsPage() {
     }
 
     try {
-      console.log("Creating deck with data:", formData);
       const response = await fetch("/api/decks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
-      console.log("Response status:", response.status);
       const responseData = await response.json();
-      console.log("Response data:", responseData);
 
       if (response.ok) {
         toast.success("Deck created successfully");
@@ -110,18 +107,13 @@ export default function FlashcardsPage() {
     if (!editingDeck) return;
 
     try {
-      console.log("Updating deck with ID:", editingDeck.id);
-      console.log("Update data:", formData);
-
       const response = await fetch(`/api/decks/${editingDeck.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
-      console.log("Response status:", response.status);
       const responseData = await response.json();
-      console.log("Response data:", responseData);
 
       if (response.ok) {
         toast.success("Deck updated successfully");

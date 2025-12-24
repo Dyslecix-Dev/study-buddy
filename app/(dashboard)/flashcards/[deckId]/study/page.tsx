@@ -150,7 +150,18 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
 
   // Cap the card count at the number of available filtered cards
   const effectiveCardCount = Math.min(cardCount, filteredCards.length);
-  const selectedCards = filteredCards.slice(0, effectiveCardCount);
+
+  // Randomize card selection and order
+  const shuffleCards = (cards: Flashcard[]) => {
+    const shuffled = [...cards];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  const selectedCards = shuffleCards(filteredCards).slice(0, effectiveCardCount);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
