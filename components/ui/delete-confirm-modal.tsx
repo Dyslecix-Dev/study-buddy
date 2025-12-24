@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+
 interface DeleteConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -9,16 +12,23 @@ interface DeleteConfirmModalProps {
 }
 
 export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, title, description, confirmText = "Delete", cancelText = "Cancel" }: DeleteConfirmModalProps) {
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   const handleConfirm = () => {
     onConfirm();
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
-      <div className="rounded-lg p-6 max-w-sm w-full mx-4" style={{ backgroundColor: "var(--surface)" }}>
+  const modalContent = (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style={{ zIndex: 99999 }}>
+      <div className="rounded-lg p-6 max-w-sm w-full mx-4 shadow-2xl relative" style={{ backgroundColor: "var(--surface)", zIndex: 100000 }}>
         <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
           {title}
         </h3>
@@ -48,5 +58,7 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, title, 
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
 

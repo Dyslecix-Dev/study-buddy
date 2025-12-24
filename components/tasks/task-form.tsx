@@ -89,35 +89,49 @@ export default function TaskForm({ onSubmit, onCancel, initialData, isEdit = fal
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="dueDate" className="block text-sm font-medium mb-1 cursor-pointer" style={{ color: "var(--text-secondary)" }}>
-              Due Date
+            <label htmlFor="startTime" className="block text-sm font-medium mb-1 cursor-pointer" style={{ color: "var(--text-secondary)" }}>
+              Start Time
             </label>
             <input
-              {...register("dueDate")}
-              id="dueDate"
-              type="date"
+              {...register("startTime")}
+              id="startTime"
+              type="datetime-local"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               style={{ color: "var(--text-secondary)" }}
             />
-            {errors.dueDate && <p className="mt-1 text-sm text-red-600">{errors.dueDate.message}</p>}
+            {errors.startTime && <p className="mt-1 text-sm text-red-600">{errors.startTime.message}</p>}
           </div>
 
           <div>
-            <label htmlFor="priority" className="block text-sm font-medium mb-1 cursor-pointer" style={{ color: "var(--text-secondary)" }}>
-              Priority
+            <label htmlFor="endTime" className="block text-sm font-medium mb-1 cursor-pointer" style={{ color: "var(--text-secondary)" }}>
+              End Time (Due)
             </label>
-            <select
-              {...register("priority", { valueAsNumber: true })}
-              id="priority"
+            <input
+              {...register("endTime")}
+              id="endTime"
+              type="datetime-local"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               style={{ color: "var(--text-secondary)" }}
-            >
-              <option value={0}>Low</option>
-              <option value={1}>Medium</option>
-              <option value={2}>High</option>
-            </select>
-            {errors.priority && <p className="mt-1 text-sm text-red-600">{errors.priority.message}</p>}
+            />
+            {errors.endTime && <p className="mt-1 text-sm text-red-600">{errors.endTime.message}</p>}
           </div>
+        </div>
+
+        <div>
+          <label htmlFor="priority" className="block text-sm font-medium mb-1 cursor-pointer" style={{ color: "var(--text-secondary)" }}>
+            Priority
+          </label>
+          <select
+            {...register("priority", { valueAsNumber: true })}
+            id="priority"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <option value={0}>Low</option>
+            <option value={1}>Medium</option>
+            <option value={2}>High</option>
+          </select>
+          {errors.priority && <p className="mt-1 text-sm text-red-600">{errors.priority.message}</p>}
         </div>
 
         <div>

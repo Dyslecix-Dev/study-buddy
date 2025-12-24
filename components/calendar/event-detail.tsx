@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Calendar, Clock, Flag, Hash } from "lucide-react";
+import { X, Calendar, Clock, Flag, Hash, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { Tag } from "@/lib/tag-utils";
 import TagBadge from "@/components/tags/tag-badge";
@@ -10,6 +10,8 @@ interface Task {
   title: string;
   description: string | null;
   dueDate: Date | null;
+  startTime: Date | null;
+  endTime: Date | null;
   priority: number;
   completed: boolean;
   order: number;
@@ -20,6 +22,7 @@ interface EventDetailProps {
   task: Task | null;
   onClose: () => void;
   onToggleComplete: (id: string, completed: boolean) => void;
+  onEdit?: (task: Task) => void;
 }
 
 const priorityLabels = {
@@ -34,10 +37,11 @@ const priorityColors = {
   2: "text-red-700 bg-red-100",
 };
 
-export default function EventDetail({ task, onClose, onToggleComplete }: EventDetailProps) {
+export default function EventDetail({ task, onClose, onToggleComplete, onEdit }: EventDetailProps) {
   if (!task) return null;
 
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !task.completed;
+  const hasTimeRange = task.startTime && task.endTime;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -74,6 +78,19 @@ export default function EventDetail({ task, onClose, onToggleComplete }: EventDe
               </div>
             )}
 
+            {/* Time Range */}
+            {hasTimeRange && (
+              <div className="flex items-center gap-3">
+                <Clock size={18} style={{ color: 'var(--text-secondary)' }} />
+                <div>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Time</p>
+                  <p className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                    {format(new Date(task.startTime!), "MMM d, yyyy h:mm a")} - {format(new Date(task.endTime!), "h:mm a")}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Priority */}
             <div className="flex items-center gap-3">
               <Flag size={18} style={{ color: 'var(--text-secondary)' }} />
@@ -102,7 +119,7 @@ export default function EventDetail({ task, onClose, onToggleComplete }: EventDe
 
             {/* Status */}
             <div className="flex items-center gap-3">
-              <Clock size={18} style={{ color: 'var(--text-secondary)' }} />
+              <Flag size={18} style={{ color: 'var(--text-secondary)' }} />
               <div>
                 <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Status</p>
                 <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{task.completed ? "Completed" : "In Progress"}</p>
@@ -112,6 +129,21 @@ export default function EventDetail({ task, onClose, onToggleComplete }: EventDe
 
           {/* Actions */}
           <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+            {onEdit && (
+              <button
+                onClick={() => {
+                  onEdit(task);
+                  onClose();
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-all duration-300 cursor-pointer"
+                style={{ backgroundColor: 'var(--primary)', color: 'black' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+              >
+                <Edit size={16} />
+                Edit
+              </button>
+            )}
             <button
               onClick={() => onToggleComplete(task.id, !task.completed)}
               className="flex-1 px-4 py-2 rounded-md font-medium transition-all duration-300 cursor-pointer"
@@ -122,7 +154,7 @@ export default function EventDetail({ task, onClose, onToggleComplete }: EventDe
               onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
               onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
             >
-              {task.completed ? "Mark as Incomplete" : "Mark as Complete"}
+              {task.completed ? "Mark Incomplete" : "Mark Complete"}
             </button>
             <button
               onClick={onClose}

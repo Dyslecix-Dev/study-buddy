@@ -56,7 +56,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     const body = await request.json()
-    const { title, description, completed, dueDate, priority, order, tagIds } = body
+    const { title, description, completed, startTime, endTime, priority, order, tagIds } = body
 
     // Verify the task belongs to the user
     const existingTask = await prisma.task.findFirst({
@@ -74,7 +74,20 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (title !== undefined) updateData.title = title
     if (description !== undefined) updateData.description = description
     if (completed !== undefined) updateData.completed = completed
-    if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null
+    if (startTime !== undefined) updateData.startTime = startTime ? new Date(startTime) : null
+    if (endTime !== undefined) updateData.endTime = endTime ? new Date(endTime) : null
+
+    // Auto-update dueDate based on endTime or startTime
+    if (endTime !== undefined || startTime !== undefined) {
+      if (endTime) {
+        updateData.dueDate = new Date(endTime)
+      } else if (startTime) {
+        updateData.dueDate = new Date(startTime)
+      } else {
+        updateData.dueDate = null
+      }
+    }
+
     if (priority !== undefined) updateData.priority = priority
     if (order !== undefined) updateData.order = order
 

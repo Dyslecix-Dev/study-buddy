@@ -25,6 +25,8 @@ interface Task {
   title: string;
   description: string | null;
   dueDate: Date | null;
+  startTime: Date | null;
+  endTime: Date | null;
   priority: number;
   completed: boolean;
   order: number;
@@ -42,22 +44,46 @@ interface CalendarEvent {
 interface CalendarViewProps {
   tasks: Task[];
   onSelectEvent: (task: Task) => void;
+  onSelectSlot?: (slotInfo: { start: Date; end: Date }) => void;
 }
 
-export default function CalendarView({ tasks, onSelectEvent }: CalendarViewProps) {
+export default function CalendarView({ tasks, onSelectEvent, onSelectSlot }: CalendarViewProps) {
   const [view, setView] = useState<View>("month");
   const [date, setDate] = useState(new Date());
 
   // Convert tasks to calendar events
   const events: CalendarEvent[] = tasks
-    .filter((task) => task.dueDate) // Only tasks with due dates
-    .map((task) => ({
-      id: task.id,
-      title: task.title,
-      start: new Date(task.dueDate!),
-      end: new Date(task.dueDate!),
-      resource: task,
-    }));
+    .filter((task) => task.dueDate || task.startTime) // Tasks with due dates or start times
+    .map((task) => {
+      // If task has startTime and endTime, use those
+      if (task.startTime && task.endTime) {
+        return {
+          id: task.id,
+          title: task.title,
+          start: new Date(task.startTime),
+          end: new Date(task.endTime),
+          resource: task,
+        };
+      }
+      // If task has only startTime, use it for both start and end
+      if (task.startTime) {
+        return {
+          id: task.id,
+          title: task.title,
+          start: new Date(task.startTime),
+          end: new Date(task.startTime),
+          resource: task,
+        };
+      }
+      // Fallback to dueDate
+      return {
+        id: task.id,
+        title: task.title,
+        start: new Date(task.dueDate!),
+        end: new Date(task.dueDate!),
+        resource: task,
+      };
+    });
 
   // Custom event component to show tags
   const EventComponent = ({ event }: { event: CalendarEvent }) => {
@@ -220,11 +246,13 @@ export default function CalendarView({ tasks, onSelectEvent }: CalendarViewProps
         onView={setView}
         onNavigate={setDate}
         onSelectEvent={(event) => onSelectEvent(event.resource)}
+        onSelectSlot={onSelectSlot ? (slotInfo) => onSelectSlot({ start: slotInfo.start, end: slotInfo.end }) : undefined}
         eventPropGetter={eventStyleGetter}
         views={["month", "week", "day", "agenda"]}
         components={{
           event: EventComponent,
         }}
+        selectable={!!onSelectSlot}
         popup
       />
     </div>

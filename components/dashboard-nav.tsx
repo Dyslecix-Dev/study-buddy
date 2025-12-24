@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import SearchTrigger from "@/components/search/search-trigger";
 import { ThemeToggle } from "@/components/theme-toggle";
 import LogoutButton from "@/components/logout-button";
-import { Menu, X, FileText, CheckSquare, Brain, Calendar as CalendarIcon, Timer } from "lucide-react";
+import { Menu, X, FileText, CheckSquare, Brain, Timer } from "lucide-react";
 
 export default function DashboardNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,7 +18,6 @@ export default function DashboardNav() {
     { name: "Tasks", href: "/tasks", icon: CheckSquare },
     { name: "Flashcards", href: "/flashcards", icon: Brain },
     { name: "Focus", href: "/focus", icon: Timer },
-    { name: "Calendar", href: "/calendar", icon: CalendarIcon },
   ];
 
   const isActive = (href: string) => pathname?.startsWith(href);

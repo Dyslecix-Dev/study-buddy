@@ -138,6 +138,8 @@ model Task {
   description String?
   completed   Boolean   @default(false)
   dueDate     DateTime?
+  startTime   DateTime?
+  endTime     DateTime?
   priority    Int       @default(0)
   order       Int       @default(0)
   userId      String
@@ -148,6 +150,7 @@ model Task {
 
   @@index([userId, completed])
   @@index([userId, dueDate])
+  @@index([userId, startTime])
   @@index([userId])
 }
 

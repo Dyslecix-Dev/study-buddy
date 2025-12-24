@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, dueDate, priority, tagIds } = body
+    const { title, description, startTime, endTime, priority, tagIds } = body
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -70,11 +70,21 @@ export async function POST(request: NextRequest) {
       orderBy: { order: 'desc' },
     })
 
+    // Compute dueDate from endTime or startTime
+    let dueDate = null
+    if (endTime) {
+      dueDate = new Date(endTime)
+    } else if (startTime) {
+      dueDate = new Date(startTime)
+    }
+
     const task = await prisma.task.create({
       data: {
         title,
         description: description || null,
-        dueDate: dueDate ? new Date(dueDate) : null,
+        dueDate,
+        startTime: startTime ? new Date(startTime) : null,
+        endTime: endTime ? new Date(endTime) : null,
         priority: priority !== undefined ? priority : 0,
         order: lastTask ? lastTask.order + 1 : 0,
         userId: user.id,

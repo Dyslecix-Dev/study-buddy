@@ -48,9 +48,7 @@ export default async function DashboardPage() {
           <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
             Welcome back, {user.email?.split("@")[0]}!
           </h1>
-          <p style={{ color: "var(--text-secondary)" }}>
-            {hasActivity ? "Here's your progress overview" : "Here's what you can do today"}
-          </p>
+          <p style={{ color: "var(--text-secondary)" }}>{hasActivity ? "Here's your progress overview" : "Here's what you can do today"}</p>
         </div>
 
         {/* Show Progress Dashboard if user has activity */}
@@ -103,7 +101,7 @@ export default async function DashboardPage() {
             </p>
           </Link>
 
-          <Link href="/calendar" className="shadow rounded-lg p-6 hover:shadow-lg transition-all duration-300" style={{ backgroundColor: "var(--surface)" }}>
+          {/* <Link href="/calendar" className="shadow rounded-lg p-6 hover:shadow-lg transition-all duration-300" style={{ backgroundColor: "var(--surface)" }}>
             <div className="flex items-center mb-4">
               <div className="p-3 rounded-lg" style={{ backgroundColor: "#ECECBB55" }}>
                 <Calendar style={{ color: "#9a9a44" }} size={24} />
@@ -115,7 +113,7 @@ export default async function DashboardPage() {
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
               View all your tasks and deadlines in calendar view
             </p>
-          </Link>
+          </Link> */}
         </div>
 
         <div className="space-y-4">
