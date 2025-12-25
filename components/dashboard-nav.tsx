@@ -6,11 +6,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import SearchTrigger from "@/components/search/search-trigger";
 import AvatarDropdown from "@/components/avatar-dropdown";
-import { Menu, X, FileText, CheckSquare, Brain, Timer, BookOpen, Settings, LogOut, Search } from "lucide-react";
+import { Menu, X, FileText, CheckSquare, Brain, Timer, BookOpen, Settings, LogOut, Search, Bug } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTheme } from "@/components/theme-provider";
 import { getUserInitials } from "@/lib/avatar-utils";
+import ReportBugModal from "@/components/ui/report-bug-modal";
 
 interface MobileProfileButtonsProps {
   user: {
@@ -26,6 +27,7 @@ interface MobileProfileButtonsProps {
 function MobileProfileButtons({ user, isLoading, onItemClick }: MobileProfileButtonsProps) {
   const router = useRouter();
   const { toggleTheme } = useTheme();
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const initials = getUserInitials(user.name, user.email);
 
   const handleLogout = async () => {
@@ -71,6 +73,24 @@ function MobileProfileButtons({ user, isLoading, onItemClick }: MobileProfileBut
       >
         <ThemeToggle iconOnly />
         Theme
+      </button>
+
+      {/* Report Bug */}
+      <button
+        onClick={() => {
+          setIsReportModalOpen(true);
+        }}
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-base font-medium transition-colors duration-300"
+        style={{ color: "var(--text-secondary)" }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = "var(--text-primary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = "var(--text-secondary)";
+        }}
+      >
+        <Bug size={20} />
+        Report Bug
       </button>
 
       {/* Search + Avatar */}
@@ -127,6 +147,13 @@ function MobileProfileButtons({ user, isLoading, onItemClick }: MobileProfileBut
         <LogOut size={20} />
         Logout
       </button>
+
+      <ReportBugModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        userEmail={user.email}
+        userName={user.name}
+      />
     </>
   );
 }

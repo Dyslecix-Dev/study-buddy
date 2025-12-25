@@ -149,7 +149,7 @@ export function RecentActivity({ activities }: RecentActivityProps) {
       </h3>
 
       {activities.length > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
           {activities.map((activity, index) => {
             const isClickable = !activity.type.includes('deleted') && activity.entityId
             const content = (

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { startOfMonth, endOfMonth } from "date-fns";
+import { startOfDay, subDays, format } from "date-fns";
 
-// GET /api/dashboard/streak - Get active days for streak calendar
+// GET /api/dashboard/streak - Get active days for streak calendar (only consecutive streak days)
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -15,115 +15,91 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get timezone offset from query params (in minutes)
-    const { searchParams } = new URL(request.url);
-    const timezoneOffset = parseInt(searchParams.get("offset") || "0");
-
     const now = new Date();
-    const monthStart = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
 
-    // Get all days with ANY activity in the current month
-    const [focusSessions, reviews, completedTasks, notes] = await Promise.all([
-      // Focus sessions (Pomodoro)
-      prisma.focusSession.findMany({
-        where: {
-          userId: user.id,
-          completedAt: {
-            gte: monthStart,
-            lte: monthEnd,
-          },
-        },
-        select: {
-          completedAt: true,
-        },
-      }),
-      // Flashcard reviews
-      prisma.review.findMany({
-        where: {
-          Flashcard: {
-            Deck: {
-              userId: user.id,
-            },
-          },
-          createdAt: {
-            gte: monthStart,
-            lte: monthEnd,
-          },
-        },
-        select: {
-          createdAt: true,
-        },
-      }),
-      // Completed tasks
-      prisma.task.findMany({
-        where: {
-          userId: user.id,
-          completed: true,
-          updatedAt: {
-            gte: monthStart,
-            lte: monthEnd,
-          },
-        },
-        select: {
-          updatedAt: true,
-        },
-      }),
-      // Created/updated notes
-      prisma.note.findMany({
-        where: {
-          userId: user.id,
-          updatedAt: {
-            gte: monthStart,
-            lte: monthEnd,
-          },
-        },
-        select: {
-          updatedAt: true,
-        },
-      }),
-    ]);
-
-    // Helper function to format date with timezone adjustment
-    const formatDateWithTimezone = (timestamp: Date): string => {
-      const utcDate = new Date(timestamp);
-      const localDate = new Date(utcDate.getTime() - timezoneOffset * 60 * 1000);
-
-      const year = localDate.getUTCFullYear();
-      const month = String(localDate.getUTCMonth() + 1).padStart(2, "0");
-      const day = String(localDate.getUTCDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
-    };
-
-    // Extract unique days with activity from all sources
-    const activeDays = new Set<string>();
-
-    // Add focus session dates
-    focusSessions.forEach((session) => {
-      activeDays.add(formatDateWithTimezone(session.completedAt));
-    });
-
-    // Add review dates
-    reviews.forEach((review) => {
-      activeDays.add(formatDateWithTimezone(review.createdAt));
-    });
-
-    // Add task completion dates
-    completedTasks.forEach((task) => {
-      activeDays.add(formatDateWithTimezone(task.updatedAt));
-    });
-
-    // Add note activity dates
-    notes.forEach((note) => {
-      activeDays.add(formatDateWithTimezone(note.updatedAt));
-    });
+    // Calculate the current streak and get the dates
+    const streakDates = await calculateStreakDates(user.id, now);
 
     return NextResponse.json({
-      activeDays: Array.from(activeDays),
+      activeDays: streakDates,
     });
   } catch (error) {
     console.error("Error fetching streak data:", error);
     return NextResponse.json({ error: "Failed to fetch streak data" }, { status: 500 });
   }
+}
+
+// Calculate streak dates - returns array of YYYY-MM-DD strings for consecutive days with activity
+async function calculateStreakDates(userId: string, currentDate: Date): Promise<string[]> {
+  const streakDates: string[] = [];
+  let checkDate = startOfDay(currentDate);
+  let checkedToday = false;
+
+  while (true) {
+    const dayEnd = new Date(checkDate.getTime() + 24 * 60 * 60 * 1000);
+
+    // Count ANY activity on this day using DailyProgress and FocusSession
+    const [focusSessions, dailyProgress, updatedNotes] = await Promise.all([
+      prisma.focusSession.count({
+        where: {
+          userId,
+          completedAt: {
+            gte: checkDate,
+            lt: dayEnd,
+          },
+        },
+      }),
+      prisma.dailyProgress.findUnique({
+        where: {
+          userId_date: {
+            userId,
+            date: checkDate,
+          },
+        },
+      }),
+      prisma.note.count({
+        where: {
+          userId,
+          updatedAt: {
+            gte: checkDate,
+            lt: dayEnd,
+          },
+        },
+      }),
+    ]);
+
+    const progressActivity = dailyProgress
+      ? dailyProgress.tasksCompleted +
+        dailyProgress.cardsReviewed +
+        dailyProgress.notesCreated +
+        dailyProgress.notesUpdated +
+        dailyProgress.examsCompleted +
+        dailyProgress.questionsCreated
+      : 0;
+    const activityOnDay = focusSessions + progressActivity + updatedNotes;
+    const isToday = checkDate.getTime() === startOfDay(currentDate).getTime();
+
+    if (activityOnDay > 0) {
+      // Add this date to streak dates
+      streakDates.push(format(checkDate, "yyyy-MM-dd"));
+      checkedToday = isToday;
+      checkDate = subDays(checkDate, 1);
+    } else {
+      // If we're checking today and there's no activity yet, don't break the streak
+      // Just move to yesterday and continue checking
+      if (isToday && !checkedToday) {
+        checkedToday = true;
+        checkDate = subDays(checkDate, 1);
+        continue;
+      }
+      // No activity on this day and it's not "today with no activity yet" - streak is broken
+      break;
+    }
+
+    // Limit check to prevent infinite loop
+    if (streakDates.length > 365) break;
+  }
+
+  return streakDates;
 }
 

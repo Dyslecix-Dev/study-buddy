@@ -6,8 +6,9 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTheme } from "@/components/theme-provider";
-import { User, Settings, LogOut } from "lucide-react";
+import { User, Settings, LogOut, Bug } from "lucide-react";
 import { getUserInitials } from "@/lib/avatar-utils";
+import ReportBugModal from "@/components/ui/report-bug-modal";
 
 interface AvatarDropdownProps {
   user: {
@@ -20,6 +21,7 @@ interface AvatarDropdownProps {
 
 export default function AvatarDropdown({ user }: AvatarDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { toggleTheme } = useTheme();
@@ -160,6 +162,24 @@ export default function AvatarDropdown({ user }: AvatarDropdownProps) {
               Theme
             </button>
 
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                setIsReportModalOpen(true);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors duration-200 cursor-pointer"
+              style={{ color: "var(--text-primary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--surface-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+            >
+              <Bug size={18} />
+              Report Bug
+            </button>
+
             <div className="my-1" style={{ borderTop: "1px solid var(--border)" }} />
 
             <button
@@ -179,6 +199,8 @@ export default function AvatarDropdown({ user }: AvatarDropdownProps) {
           </div>
         </div>
       )}
+
+      <ReportBugModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} userEmail={user.email} userName={user.name} />
     </div>
   );
 }
