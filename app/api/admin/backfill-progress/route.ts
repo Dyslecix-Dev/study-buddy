@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { startOfDay, eachDayOfInterval } from "date-fns";
@@ -9,7 +9,7 @@ import { startOfDay, eachDayOfInterval } from "date-fns";
  *
  * GET /api/admin/backfill-progress
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const {

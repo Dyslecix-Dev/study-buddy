@@ -21,8 +21,15 @@ export type ActivityType =
   | 'focus_session_work'
   | 'focus_session_short_break'
   | 'focus_session_long_break'
+  | 'exam_created'
+  | 'exam_updated'
+  | 'exam_deleted'
+  | 'exam_completed'
+  | 'question_created'
+  | 'question_updated'
+  | 'question_deleted'
 
-export type EntityType = 'note' | 'task' | 'folder' | 'deck' | 'flashcard' | 'focus_session'
+export type EntityType = 'note' | 'task' | 'folder' | 'deck' | 'flashcard' | 'focus_session' | 'exam' | 'question'
 
 interface LogActivityParams {
   userId: string
@@ -232,5 +239,74 @@ export async function logFocusSession(
     entityId: sessionId,
     title: titleMap[mode],
     metadata: { duration, mode },
+  })
+}
+
+export async function logExamCreated(userId: string, examId: string, name: string) {
+  return logActivity({
+    userId,
+    type: 'exam_created',
+    entityType: 'exam',
+    entityId: examId,
+    title: name,
+  })
+}
+
+export async function logExamUpdated(userId: string, examId: string, name: string) {
+  return logActivity({
+    userId,
+    type: 'exam_updated',
+    entityType: 'exam',
+    entityId: examId,
+    title: name,
+  })
+}
+
+export async function logExamDeleted(userId: string, name: string) {
+  return logActivity({
+    userId,
+    type: 'exam_deleted',
+    entityType: 'exam',
+    title: name,
+  })
+}
+
+export async function logExamCompleted(userId: string, examId: string, examName: string, score: number) {
+  return logActivity({
+    userId,
+    type: 'exam_completed',
+    entityType: 'exam',
+    entityId: examId,
+    title: `Completed: ${examName}`,
+    metadata: { score },
+  })
+}
+
+export async function logQuestionCreated(userId: string, questionId: string, examName: string) {
+  return logActivity({
+    userId,
+    type: 'question_created',
+    entityType: 'question',
+    entityId: questionId,
+    title: `Question in ${examName}`,
+  })
+}
+
+export async function logQuestionUpdated(userId: string, questionId: string, examName: string) {
+  return logActivity({
+    userId,
+    type: 'question_updated',
+    entityType: 'question',
+    entityId: questionId,
+    title: `Question in ${examName}`,
+  })
+}
+
+export async function logQuestionDeleted(userId: string, examName: string) {
+  return logActivity({
+    userId,
+    type: 'question_deleted',
+    entityType: 'question',
+    title: `Question in ${examName}`,
   })
 }

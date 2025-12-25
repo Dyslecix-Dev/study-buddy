@@ -11,7 +11,7 @@ type Params = {
 };
 
 // GET /api/tasks/[id] - Get a specific task
-export async function GET({ params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
     const supabase = await createClient();

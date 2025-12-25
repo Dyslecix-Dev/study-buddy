@@ -8,11 +8,12 @@ interface ActivityData {
   focusMinutes: number
   tasksCompleted: number
   cardsReviewed: number
+  examsCompleted: number
 }
 
 interface ActivityChartProps {
   data: ActivityData[]
-  metric: 'focus' | 'tasks' | 'cards' | 'all'
+  metric: 'focus' | 'tasks' | 'cards' | 'exams' | 'all'
 }
 
 export function ActivityChart({ data, metric }: ActivityChartProps) {
@@ -81,6 +82,18 @@ export function ActivityChart({ data, metric }: ActivityChartProps) {
               stroke="var(--quaternary)"
               strokeWidth={2}
               dot={{ fill: 'var(--quaternary)', r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+          )}
+
+          {(metric === 'exams' || metric === 'all') && (
+            <Line
+              type="monotone"
+              dataKey="examsCompleted"
+              name="Exams"
+              stroke="#9C27B0"
+              strokeWidth={2}
+              dot={{ fill: '#9C27B0', r: 4 }}
               activeDot={{ r: 6 }}
             />
           )}

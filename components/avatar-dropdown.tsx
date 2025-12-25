@@ -51,7 +51,6 @@ export default function AvatarDropdown({ user }: AvatarDropdownProps) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer transition-all duration-200"
         style={{
-          focusRingColor: "var(--primary)",
           borderWidth: "2px",
           borderStyle: "solid",
           borderColor: isOpen ? "var(--primary)" : "transparent",

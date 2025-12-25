@@ -6,7 +6,7 @@ import { logNoteUpdated, logNoteDeleted } from "@/lib/activity-logger";
 import { deleteNoteImages } from "@/lib/blob-cleanup";
 
 // GET - Get a single note
-export async function GET({ params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createClient();
@@ -257,7 +257,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 }
 
 // DELETE - Delete a note
-export async function DELETE({ params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createClient();

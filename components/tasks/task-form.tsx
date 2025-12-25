@@ -28,7 +28,8 @@ export default function TaskForm({ onSubmit, onCancel, initialData, isEdit = fal
     defaultValues: initialData || {
       title: "",
       description: "",
-      dueDate: "",
+      startTime: "",
+      endTime: "",
       priority: 0,
     },
   });

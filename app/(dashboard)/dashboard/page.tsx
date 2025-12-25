@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { FileText, CheckSquare, Brain } from "lucide-react";
+import { FileText, CheckSquare, Brain, BookOpen } from "lucide-react";
 import DashboardNav from "@/components/dashboard-nav";
 import { ProgressDashboard } from "@/components/dashboard/progress-dashboard";
 
@@ -41,8 +41,17 @@ export default async function DashboardPage() {
     where: { userId: user.id },
   });
 
+  // Check if user has any questions
+  const questionCount = await prisma.question.count({
+    where: {
+      Exam: {
+        userId: user.id,
+      },
+    },
+  });
+
   // Check if user has any activity (to determine if we should show the progress dashboard)
-  const hasActivity = noteCount > 0 || taskCount > 0 || flashcardCount > 0 || focusSessionCount > 0;
+  const hasActivity = noteCount > 0 || taskCount > 0 || flashcardCount > 0 || focusSessionCount > 0 || questionCount > 0;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
@@ -106,19 +115,19 @@ export default async function DashboardPage() {
             </p>
           </Link>
 
-          {/* <Link href="/calendar" className="shadow rounded-lg p-6 hover:shadow-lg transition-all duration-300" style={{ backgroundColor: "var(--surface)" }}>
+          <Link href="/exams" className="shadow rounded-lg p-6 hover:shadow-lg transition-all duration-300" style={{ backgroundColor: "var(--surface)" }}>
             <div className="flex items-center mb-4">
-              <div className="p-3 rounded-lg" style={{ backgroundColor: "#ECECBB55" }}>
-                <Calendar style={{ color: "#9a9a44" }} size={24} />
+              <div className="p-3 rounded-lg" style={{ backgroundColor: "#9C27B033" }}>
+                <BookOpen style={{ color: "#9C27B0" }} size={24} />
               </div>
             </div>
             <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
-              Calendar
+              Exams
             </h3>
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              View all your tasks and deadlines in calendar view
+              Create and take practice exams to test your knowledge
             </p>
-          </Link> */}
+          </Link>
         </div>
 
         <div className="space-y-4">
@@ -160,6 +169,20 @@ export default async function DashboardPage() {
               </p>
               <Link href="/flashcards" className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all" style={{ backgroundColor: "var(--quaternary)", color: "#1a1a1a" }}>
                 Create Your First Flashcard
+              </Link>
+            </div>
+          )}
+
+          {questionCount === 0 && (
+            <div className="border rounded-lg p-6" style={{ backgroundColor: "var(--surface-secondary)", borderColor: "var(--border)" }}>
+              <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+                📝 Test Your Knowledge
+              </h2>
+              <p className="mb-3" style={{ color: "var(--text-secondary)" }}>
+                Create practice exams with multiple choice, select all, and true/false questions. Start building your first exam to test yourself.
+              </p>
+              <Link href="/exams" className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all" style={{ backgroundColor: "#9C27B0", color: "#ffffff" }}>
+                Create Your First Exam Question
               </Link>
             </div>
           )}

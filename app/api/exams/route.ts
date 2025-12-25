@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { randomUUID } from "crypto";
-import { logFolderCreated } from "@/lib/activity-logger";
+import { logExamCreated } from "@/lib/activity-logger";
 
-// GET /api/folders - Get all folders for the current user
+// GET /api/exams - Get all exams for the current user
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -16,23 +15,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const folders = await prisma.folder.findMany({
+    const exams = await prisma.exam.findMany({
       where: { userId: user.id },
       include: {
         _count: {
-          select: { Note: true },
+          select: { Question: true },
         },
       },
       orderBy: { updatedAt: "desc" },
     });
 
-    return NextResponse.json(folders);
+    return NextResponse.json(exams);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch folders" }, { status: 500 });
+    console.error("Error fetching exams:", error);
+    return NextResponse.json({ error: "Failed to fetch exams" }, { status: 500 });
   }
 }
 
-// POST /api/folders - Create a new folder
+// POST /api/exams - Create a new exam
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -51,35 +51,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    const folder = await prisma.folder.create({
+    const exam = await prisma.exam.create({
       data: {
-        id: randomUUID(),
         name,
-        description,
-        color,
+        description: description || null,
+        color: color || null,
         userId: user.id,
-        updatedAt: new Date(),
       },
       include: {
         _count: {
-          select: { Note: true },
+          select: { Question: true },
         },
       },
     });
 
     // Log activity
-    await logFolderCreated(user.id, folder.id, folder.name);
+    await logExamCreated(user.id, exam.id, exam.name);
 
-    return NextResponse.json(folder, { status: 201 });
+    return NextResponse.json(exam, { status: 201 });
   } catch (error: any) {
-    console.error("Error creating folder:", error);
+    console.error("Error creating exam:", error);
 
     // Handle unique constraint violation
     if (error.code === "P2002") {
-      return NextResponse.json({ error: "A folder with this name already exists" }, { status: 409 });
+      return NextResponse.json({ error: "An exam with this name already exists" }, { status: 409 });
     }
 
-    return NextResponse.json({ error: "Failed to create folder" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create exam" }, { status: 500 });
   }
 }
-

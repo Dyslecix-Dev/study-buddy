@@ -20,6 +20,12 @@ declare global {
        * @example cy.createFlashcard('Front', 'Back', 'deck-id')
        */
       createFlashcard(front: string, back: string, deckId: string): Chainable<void>
+
+      /**
+       * Custom command to create a test note
+       * @example cy.createNote('My Note', 'Note content', 'folder-id')
+       */
+      createNote(title: string, content: string, folderId?: string): Chainable<void>
     }
   }
 }
@@ -56,6 +62,19 @@ Cypress.Commands.add('createFlashcard', (front: string, back: string, deckId: st
     body: {
       front,
       back,
+    },
+  })
+})
+
+// Create note command
+Cypress.Commands.add('createNote', (title: string, content: string, folderId?: string) => {
+  cy.request({
+    method: 'POST',
+    url: '/api/notes',
+    body: {
+      title,
+      content,
+      folderId,
     },
   })
 })

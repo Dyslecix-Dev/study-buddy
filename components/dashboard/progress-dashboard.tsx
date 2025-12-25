@@ -6,7 +6,7 @@ import { ActivityChart } from "./activity-chart";
 import { StreakCalendar } from "./streak-calendar";
 import { RecentActivity } from "./recent-activity";
 import { DashboardSkeleton } from "./dashboard-skeleton";
-import { Clock, CheckSquare, Brain, FileText, Flame, TrendingUp } from "lucide-react";
+import { Clock, CheckSquare, Brain, FileText, Flame, TrendingUp, BookOpen } from "lucide-react";
 
 interface DashboardStats {
   period: string;
@@ -19,6 +19,9 @@ interface DashboardStats {
     reviewsCount: number;
     totalFocusMinutes: number;
     totalStudyMinutes: number;
+    totalExams: number;
+    totalQuestions: number;
+    examsCompleted: number;
     streak: number;
   };
   activityData: Array<{
@@ -27,10 +30,12 @@ interface DashboardStats {
     focusMinutes: number;
     tasksCompleted: number;
     cardsReviewed: number;
+    examsCompleted: number;
   }>;
   recentActivity: Array<{
     id: string;
     type: "note" | "task" | "deck";
+    entityType: string;
     title: string;
     timestamp: string;
   }>;
@@ -39,7 +44,7 @@ interface DashboardStats {
 export function ProgressDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [period, setPeriod] = useState<"day" | "week" | "month">("week");
-  const [chartMetric, setChartMetric] = useState<"focus" | "tasks" | "cards" | "all">("all");
+  const [chartMetric, setChartMetric] = useState<"focus" | "tasks" | "cards" | "exams" | "all">("all");
   const [loading, setLoading] = useState(true);
 
   const fetchStats = async () => {
@@ -131,12 +136,12 @@ export function ProgressDashboard() {
               iconBgColor="#E1AA3633"
             />
             <StatsCard
-              title="Study Streak"
-              value={`${stats.overview.streak} ${stats.overview.streak > 1 ? "days" : "day"}`}
-              subtitle={stats.overview.streak > 0 ? "Keep it going! 🔥" : "Start today!"}
-              icon={Flame}
-              iconColor="#ff6b6b"
-              iconBgColor="#ff6b6b33"
+              title="Exams Taken"
+              value={stats.overview.examsCompleted}
+              subtitle={`${period === "day" ? "Today" : `This ${period}`}`}
+              icon={BookOpen}
+              iconColor="#9C27B0"
+              iconBgColor="#9C27B033"
             />
           </div>
 
@@ -149,7 +154,7 @@ export function ProgressDashboard() {
                     Activity Trends
                   </h3>
                   <div className="flex gap-2 flex-wrap">
-                    {(["all", "focus", "tasks", "cards"] as const).map((metric) => (
+                    {(["all", "focus", "tasks", "cards", "exams"] as const).map((metric) => (
                       <button
                         key={metric}
                         onClick={() => setChartMetric(metric)}
@@ -180,6 +185,17 @@ export function ProgressDashboard() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: "var(--border)" }}>
                     <div className="flex items-center gap-2">
+                      <Flame size={16} style={{ color: "#ff6b6b" }} />
+                      <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                        Study Streak
+                      </span>
+                    </div>
+                    <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                      {stats.overview.streak} {stats.overview.streak === 1 ? "day" : "days"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: "var(--border)" }}>
+                    <div className="flex items-center gap-2">
                       <FileText size={16} style={{ color: "var(--primary)" }} />
                       <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
                         Total Notes
@@ -200,7 +216,7 @@ export function ProgressDashboard() {
                       {stats.overview.totalDecks}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between pb-3 border-b" style={{ borderColor: "var(--border)" }}>
                     <div className="flex items-center gap-2">
                       <CheckSquare size={16} style={{ color: "var(--secondary)" }} />
                       <span className="text-sm" style={{ color: "var(--text-secondary)" }}>

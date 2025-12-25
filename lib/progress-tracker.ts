@@ -1,7 +1,7 @@
 import { prisma } from './prisma'
 import { startOfDay } from 'date-fns'
 
-export type ProgressType = 'taskCompleted' | 'cardReviewed' | 'noteCreated' | 'noteUpdated' | 'focusSession'
+export type ProgressType = 'taskCompleted' | 'cardReviewed' | 'noteCreated' | 'noteUpdated' | 'focusSession' | 'examCompleted' | 'questionCreated'
 
 /**
  * Increments the daily progress counter for a specific activity type
@@ -36,6 +36,12 @@ export async function incrementDailyProgress(
       case 'focusSession':
         updateData.focusMinutes = { increment: amount }
         break
+      case 'examCompleted':
+        updateData.examsCompleted = { increment: amount }
+        break
+      case 'questionCreated':
+        updateData.questionsCreated = { increment: amount }
+        break
     }
 
     await prisma.dailyProgress.upsert({
@@ -54,6 +60,8 @@ export async function incrementDailyProgress(
         notesCreated: type === 'noteCreated' ? amount : 0,
         notesUpdated: type === 'noteUpdated' ? amount : 0,
         focusMinutes: type === 'focusSession' ? amount : 0,
+        examsCompleted: type === 'examCompleted' ? amount : 0,
+        questionsCreated: type === 'questionCreated' ? amount : 0,
       },
     })
   } catch (error) {
@@ -113,6 +121,16 @@ export async function decrementDailyProgress(
       case 'focusSession':
         if (existing.focusMinutes > 0) {
           updateData.focusMinutes = { decrement: Math.min(amount, existing.focusMinutes) }
+        }
+        break
+      case 'examCompleted':
+        if (existing.examsCompleted > 0) {
+          updateData.examsCompleted = { decrement: Math.min(amount, existing.examsCompleted) }
+        }
+        break
+      case 'questionCreated':
+        if (existing.questionsCreated > 0) {
+          updateData.questionsCreated = { decrement: Math.min(amount, existing.questionsCreated) }
         }
         break
     }

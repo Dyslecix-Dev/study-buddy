@@ -19,7 +19,10 @@ export async function GET(request: NextRequest) {
     const folderId = searchParams.get("folderId");
 
     // Build the where clause
-    const whereClause = {
+    const whereClause: {
+      userId: string;
+      folderId?: string;
+    } = {
       userId: user.id,
     };
 

@@ -5,7 +5,7 @@ import { incrementDailyProgress } from "@/lib/progress-tracker";
 import { logNoteCreated } from "@/lib/activity-logger";
 
 // GET - List all notes for the authenticated user
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const {

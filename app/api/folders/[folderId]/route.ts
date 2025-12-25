@@ -8,7 +8,7 @@ type Params = Promise<{
 }>;
 
 // GET /api/folders/[folderId] - Get a specific folder with its notes
-export async function GET({ params }: { params: Params }) {
+export async function GET(request: NextRequest, { params }: { params: Params }) {
   try {
     const { folderId } = await params;
     const supabase = await createClient();
@@ -99,7 +99,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
 }
 
 // DELETE /api/folders/[folderId] - Delete a folder
-export async function DELETE({ params }: { params: Params }) {
+export async function DELETE(request: NextRequest, { params }: { params: Params }) {
   try {
     const { folderId } = await params;
     const supabase = await createClient();

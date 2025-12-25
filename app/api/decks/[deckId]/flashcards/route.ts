@@ -10,7 +10,7 @@ type Params = {
 };
 
 // GET /api/decks/[deckId]/flashcards - Get all flashcards in a deck
-export async function GET({ params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { deckId } = await params;
     const supabase = await createClient();

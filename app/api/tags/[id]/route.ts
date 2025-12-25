@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/tags/[id] - Get a specific tag
-export async function GET({ params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient();
     const {
@@ -114,7 +114,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 }
 
 // DELETE /api/tags/[id] - Delete a tag
-export async function DELETE({ params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient();
     const {

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import SearchTrigger from "@/components/search/search-trigger";
 import AvatarDropdown from "@/components/avatar-dropdown";
-import { Menu, X, FileText, CheckSquare, Brain, Timer, Settings, LogOut, Search } from "lucide-react";
+import { Menu, X, FileText, CheckSquare, Brain, Timer, BookOpen, Settings, LogOut, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTheme } from "@/components/theme-provider";
@@ -169,6 +169,7 @@ export default function DashboardNav() {
     { name: "Notes", href: "/notes", icon: FileText },
     { name: "Tasks", href: "/tasks", icon: CheckSquare },
     { name: "Flashcards", href: "/flashcards", icon: Brain },
+    { name: "Exams", href: "/exams", icon: BookOpen },
     { name: "Focus", href: "/focus", icon: Timer },
   ];
 

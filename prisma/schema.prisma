@@ -127,6 +127,7 @@ model Tag {
   Flashcard Flashcard[]
   Note      Note[]
   Task      Task[]
+  Question  Question[]
 
   @@index([userId])
   @@index([name])
@@ -167,17 +168,19 @@ model FocusSession {
 }
 
 model DailyProgress {
-  id             String   @id @default(uuid())
-  userId         String
-  date           DateTime
-  tasksCompleted Int      @default(0)
-  cardsReviewed  Int      @default(0)
-  notesCreated   Int      @default(0)
-  notesUpdated   Int      @default(0)
-  focusMinutes   Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  User           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(uuid())
+  userId           String
+  date             DateTime
+  tasksCompleted   Int      @default(0)
+  cardsReviewed    Int      @default(0)
+  notesCreated     Int      @default(0)
+  notesUpdated     Int      @default(0)
+  focusMinutes     Int      @default(0)
+  examsCompleted   Int      @default(0)
+  questionsCreated Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  User             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -199,6 +202,69 @@ model ActivityLog {
   @@index([userId])
 }
 
+model Exam {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  color       String?
+  userId      String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  User        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Question    Question[]
+  ExamAttempt ExamAttempt[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Question {
+  id             String           @id @default(uuid())
+  question       String
+  questionType   String           // 'multiple_choice', 'select_all', 'true_false'
+  options        Json             // Array of options with { text: string, isCorrect: boolean }
+  examId         String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  Exam           Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  Tag            Tag[]
+  QuestionResult QuestionResult[]
+
+  @@index([examId])
+}
+
+model ExamAttempt {
+  id             String           @id @default(uuid())
+  examId         String
+  userId         String
+  score          Int              // Percentage score 0-100
+  totalQuestions Int
+  correctAnswers Int
+  startedAt      DateTime         @default(now())
+  completedAt    DateTime?
+  Exam           Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  User           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  QuestionResult QuestionResult[]
+
+  @@index([examId])
+  @@index([userId])
+  @@index([userId, completedAt])
+}
+
+model QuestionResult {
+  id            String      @id @default(uuid())
+  attemptId     String
+  questionId    String
+  userAnswer    Json        // Array of selected option indices or boolean
+  isCorrect     Boolean
+  createdAt     DateTime    @default(now())
+  ExamAttempt   ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  Question      Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@index([questionId])
+}
+
 model User {
   id             String          @id
   email          String          @unique
@@ -210,6 +276,8 @@ model User {
   ActivityLog    ActivityLog[]
   DailyProgress  DailyProgress[]
   Deck           Deck[]
+  Exam           Exam[]
+  ExamAttempt    ExamAttempt[]
   Folder         Folder[]
   FocusSession   FocusSession[]
   Note           Note[]

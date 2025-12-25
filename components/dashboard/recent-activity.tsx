@@ -10,7 +10,9 @@ import {
   Edit,
   Trash2,
   Coffee,
-  Zap
+  Zap,
+  BookOpen,
+  HelpCircle
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
@@ -50,6 +52,10 @@ export function RecentActivity({ activities }: RecentActivityProps) {
         return <Brain size={16} style={{ color: 'var(--quaternary)' }} />
       case 'folder':
         return <Folder size={16} style={{ color: '#9a9a44' }} />
+      case 'exam':
+        return <BookOpen size={16} style={{ color: '#9C27B0' }} />
+      case 'question':
+        return <HelpCircle size={16} style={{ color: '#9C27B0' }} />
       default:
         return <Clock size={16} style={{ color: 'var(--text-secondary)' }} />
     }
@@ -73,6 +79,9 @@ export function RecentActivity({ activities }: RecentActivityProps) {
         return `/notes`
       case 'focus_session':
         return `/focus`
+      case 'exam':
+      case 'question':
+        return `/exams`
       default:
         return '#'
     }
@@ -110,6 +119,17 @@ export function RecentActivity({ activities }: RecentActivityProps) {
     if (type === 'flashcard_updated') return 'Updated flashcard'
     if (type === 'flashcard_deleted') return 'Deleted flashcard'
     if (type === 'flashcard_reviewed') return 'Reviewed flashcard'
+
+    // Exams
+    if (type === 'exam_created') return 'Created exam'
+    if (type === 'exam_updated') return 'Updated exam'
+    if (type === 'exam_deleted') return 'Deleted exam'
+    if (type === 'exam_completed') return 'Completed exam'
+
+    // Questions
+    if (type === 'question_created') return 'Created question'
+    if (type === 'question_updated') return 'Updated question'
+    if (type === 'question_deleted') return 'Deleted question'
 
     return 'Activity'
   }

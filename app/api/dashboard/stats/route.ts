@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all statistics in parallel
-    const [totalNotes, totalTasks, completedTasks, totalFlashcards, totalDecks, reviewsCount, totalFocusMinutes, focusSessions, studySessions, recentActivity] = await Promise.all([
+    const [totalNotes, totalTasks, completedTasks, totalFlashcards, totalDecks, reviewsCount, totalFocusMinutes, totalExams, totalQuestions, examsCompleted, focusSessions, studySessions, recentActivity] = await Promise.all([
       // Total notes
       prisma.note.count({
         where: { userId: user.id },
@@ -104,6 +104,33 @@ export async function GET(request: NextRequest) {
         })
         .then((result) => result._sum.focusMinutes || 0),
 
+      // Total exams
+      prisma.exam.count({
+        where: { userId: user.id },
+      }),
+
+      // Total questions
+      prisma.question.count({
+        where: {
+          Exam: {
+            userId: user.id,
+          },
+        },
+      }),
+
+      // Exams completed in period - use DailyProgress for permanent tracking
+      prisma.dailyProgress
+        .aggregate({
+          where: {
+            userId: user.id,
+            date: { gte: periodStart },
+          },
+          _sum: {
+            examsCompleted: true,
+          },
+        })
+        .then((result) => result._sum.examsCompleted || 0),
+
       // Focus sessions (for recent activity display)
       prisma.focusSession.findMany({
         where: {
@@ -161,6 +188,9 @@ export async function GET(request: NextRequest) {
         reviewsCount,
         totalFocusMinutes,
         totalStudyMinutes,
+        totalExams,
+        totalQuestions,
+        examsCompleted,
         streak,
       },
       activityData,
@@ -212,7 +242,7 @@ async function calculateStreak(userId: string, currentDate: Date): Promise<numbe
       }),
     ]);
 
-    const progressActivity = dailyProgress ? dailyProgress.tasksCompleted + dailyProgress.cardsReviewed + dailyProgress.notesCreated + dailyProgress.notesUpdated : 0;
+    const progressActivity = dailyProgress ? dailyProgress.tasksCompleted + dailyProgress.cardsReviewed + dailyProgress.notesCreated + dailyProgress.notesUpdated + dailyProgress.examsCompleted + dailyProgress.questionsCreated : 0;
     const activityOnDay = focusSessions + progressActivity + updatedNotes;
     const isToday = checkDate.getTime() === startOfDay(currentDate).getTime();
 
@@ -263,6 +293,7 @@ async function prepareActivityChartData(userId: string, startDate: Date, endDate
         focusMinutes: dailyProgress?.focusMinutes || 0,
         tasksCompleted: dailyProgress?.tasksCompleted || 0,
         cardsReviewed: dailyProgress?.cardsReviewed || 0,
+        examsCompleted: dailyProgress?.examsCompleted || 0,
       };
     })
   );

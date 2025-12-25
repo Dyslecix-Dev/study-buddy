@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { logDeckUpdated, logDeckDeleted } from "@/lib/activity-logger";
+import { logExamUpdated, logExamDeleted } from "@/lib/activity-logger";
 
 type Params = {
   params: Promise<{
-    deckId: string;
+    examId: string;
   }>;
 };
 
-// GET /api/decks/[deckId] - Get a specific deck with flashcards
+// GET /api/exams/[examId] - Get a specific exam with questions
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const { deckId } = await params;
+    const { examId } = await params;
     const supabase = await createClient();
     const {
       data: { user },
@@ -22,39 +22,39 @@ export async function GET(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const deck = await prisma.deck.findFirst({
+    const exam = await prisma.exam.findFirst({
       where: {
-        id: deckId,
+        id: examId,
         userId: user.id,
       },
       include: {
-        Flashcard: {
+        Question: {
           orderBy: { createdAt: "asc" },
           include: {
             Tag: true,
           },
         },
         _count: {
-          select: { Flashcard: true },
+          select: { Question: true },
         },
       },
     });
 
-    if (!deck) {
-      return NextResponse.json({ error: "Deck not found" }, { status: 404 });
+    if (!exam) {
+      return NextResponse.json({ error: "Exam not found" }, { status: 404 });
     }
 
-    return NextResponse.json(deck);
+    return NextResponse.json(exam);
   } catch (error) {
-    console.error("Error fetching deck:", error);
-    return NextResponse.json({ error: "Failed to fetch deck" }, { status: 500 });
+    console.error("Error fetching exam:", error);
+    return NextResponse.json({ error: "Failed to fetch exam" }, { status: 500 });
   }
 }
 
-// PATCH /api/decks/[deckId] - Update a deck
+// PATCH /api/exams/[examId] - Update an exam
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
-    const { deckId } = await params;
+    const { examId } = await params;
     const supabase = await createClient();
     const {
       data: { user },
@@ -67,16 +67,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const body = await request.json();
     const { name, description, color } = body;
 
-    // Verify the deck belongs to the user
-    const existingDeck = await prisma.deck.findFirst({
+    // Verify the exam belongs to the user
+    const existingExam = await prisma.exam.findFirst({
       where: {
-        id: deckId,
+        id: examId,
         userId: user.id,
       },
     });
 
-    if (!existingDeck) {
-      return NextResponse.json({ error: "Deck not found" }, { status: 404 });
+    if (!existingExam) {
+      return NextResponse.json({ error: "Exam not found" }, { status: 404 });
     }
 
     const updateData: any = {};
@@ -84,30 +84,30 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     if (description !== undefined) updateData.description = description;
     if (color !== undefined) updateData.color = color;
 
-    const deck = await prisma.deck.update({
-      where: { id: deckId },
+    const exam = await prisma.exam.update({
+      where: { id: examId },
       data: updateData,
       include: {
         _count: {
-          select: { Flashcard: true },
+          select: { Question: true },
         },
       },
     });
 
     // Log activity
-    await logDeckUpdated(user.id, deck.id, deck.name);
+    await logExamUpdated(user.id, exam.id, exam.name);
 
-    return NextResponse.json(deck);
+    return NextResponse.json(exam);
   } catch (error) {
-    console.error("Error updating deck:", error);
-    return NextResponse.json({ error: "Failed to update deck" }, { status: 500 });
+    console.error("Error updating exam:", error);
+    return NextResponse.json({ error: "Failed to update exam" }, { status: 500 });
   }
 }
 
-// DELETE /api/decks/[deckId] - Delete a deck
+// DELETE /api/exams/[examId] - Delete an exam
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const { deckId } = await params;
+    const { examId } = await params;
     const supabase = await createClient();
     const {
       data: { user },
@@ -117,14 +117,14 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Verify the deck belongs to the user and get all flashcards with tags
-    const existingDeck = await prisma.deck.findFirst({
+    // Verify the exam belongs to the user and get all questions with tags
+    const existingExam = await prisma.exam.findFirst({
       where: {
-        id: deckId,
+        id: examId,
         userId: user.id,
       },
       include: {
-        Flashcard: {
+        Question: {
           include: {
             Tag: {
               select: { id: true },
@@ -134,24 +134,24 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       },
     });
 
-    if (!existingDeck) {
-      return NextResponse.json({ error: "Deck not found" }, { status: 404 });
+    if (!existingExam) {
+      return NextResponse.json({ error: "Exam not found" }, { status: 404 });
     }
 
-    // Collect all tag IDs from flashcards in this deck
+    // Collect all tag IDs from questions in this exam
     const tagIds = new Set<string>();
-    existingDeck.Flashcard.forEach((flashcard) => {
-      flashcard.Tag.forEach((tag) => {
+    existingExam.Question.forEach((question) => {
+      question.Tag.forEach((tag) => {
         tagIds.add(tag.id);
       });
     });
 
     // Log activity before deletion
-    await logDeckDeleted(user.id, existingDeck.name);
+    await logExamDeleted(user.id, existingExam.name);
 
-    // Delete the deck (this will cascade delete all flashcards)
-    await prisma.deck.delete({
-      where: { id: deckId },
+    // Delete the exam (this will cascade delete all questions)
+    await prisma.exam.delete({
+      where: { id: examId },
     });
 
     // Clean up orphaned tags
@@ -164,13 +164,14 @@ export async function DELETE(request: NextRequest, { params }: Params) {
               Note: true,
               Task: true,
               Flashcard: true,
+              Question: true,
             },
           },
         },
       });
 
       if (tagWithUsage) {
-        const totalUsage = tagWithUsage._count.Note + tagWithUsage._count.Task + tagWithUsage._count.Flashcard;
+        const totalUsage = tagWithUsage._count.Note + tagWithUsage._count.Task + tagWithUsage._count.Flashcard + tagWithUsage._count.Question;
         if (totalUsage === 0) {
           await prisma.tag.delete({
             where: { id: tagId },
@@ -181,8 +182,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting deck:", error);
-    return NextResponse.json({ error: "Failed to delete deck" }, { status: 500 });
+    console.error("Error deleting exam:", error);
+    return NextResponse.json({ error: "Failed to delete exam" }, { status: 500 });
   }
 }
 

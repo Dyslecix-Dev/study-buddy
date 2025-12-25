@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 
@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
  *
  * DELETE /api/admin/reset-progress
  */
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient();
     const {

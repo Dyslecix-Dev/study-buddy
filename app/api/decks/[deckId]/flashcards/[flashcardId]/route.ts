@@ -11,7 +11,7 @@ type Params = {
 };
 
 // GET /api/decks/[deckId]/flashcards/[flashcardId] - Get a specific flashcard
-export async function GET({ params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { deckId, flashcardId } = await params;
     const supabase = await createClient();
@@ -153,7 +153,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 }
 
 // DELETE /api/decks/[deckId]/flashcards/[flashcardId] - Delete a flashcard
-export async function DELETE({ params }: Params) {
+export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { deckId, flashcardId } = await params;
     const supabase = await createClient();
