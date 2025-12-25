@@ -18,6 +18,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  ...(process.env.NODE_ENV === "development" && {
+    webpack: (config: any) => {
+      config.watchOptions = {
+        poll: 1000,
+        aggregateTimeout: 300,
+        ignored: ["**/node_modules", "**/.git", "**/.next", "**/cypress", "**/.turbo"],
+      };
+      return config;
+    },
+  }),
 };
 
 export default nextConfig;

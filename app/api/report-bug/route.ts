@@ -23,18 +23,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate severity
-    const validSeverities = ['low', 'medium', 'high', 'critical'];
-    if (!validSeverities.includes(severity)) {
-      return NextResponse.json({ error: 'Invalid severity level' }, { status: 400 });
-    }
-
-    // Get severity emoji
-    const severityEmoji = {
+    const severityEmojiMap: Record<string, string> = {
       low: '🟢',
       medium: '🟡',
       high: '🟠',
       critical: '🔴',
-    }[severity];
+    };
+
+    if (!severityEmojiMap[severity]) {
+      return NextResponse.json({ error: 'Invalid severity level' }, { status: 400 });
+    }
+
+    const severityEmoji = severityEmojiMap[severity];
 
     // Send email using Resend
     const { data, error } = await resend.emails.send({
