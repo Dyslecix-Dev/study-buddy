@@ -1,25 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
-import { logDeckUpdated, logDeckDeleted } from '@/lib/activity-logger'
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { logDeckUpdated, logDeckDeleted } from "@/lib/activity-logger";
 
 type Params = {
   params: Promise<{
-    deckId: string
-  }>
-}
+    deckId: string;
+  }>;
+};
 
 // GET /api/decks/[deckId] - Get a specific deck with flashcards
-export async function GET(_request: NextRequest, { params }: Params) {
+export async function GET({ params }: Params) {
   try {
-    const { deckId } = await params
-    const supabase = await createClient()
+    const { deckId } = await params;
+    const supabase = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const deck = await prisma.deck.findFirst({
@@ -29,7 +29,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
       },
       include: {
         Flashcard: {
-          orderBy: { createdAt: 'asc' },
+          orderBy: { createdAt: "asc" },
           include: {
             Tag: true,
           },
@@ -38,34 +38,34 @@ export async function GET(_request: NextRequest, { params }: Params) {
           select: { Flashcard: true },
         },
       },
-    })
+    });
 
     if (!deck) {
-      return NextResponse.json({ error: 'Deck not found' }, { status: 404 })
+      return NextResponse.json({ error: "Deck not found" }, { status: 404 });
     }
 
-    return NextResponse.json(deck)
+    return NextResponse.json(deck);
   } catch (error) {
-    console.error('Error fetching deck:', error)
-    return NextResponse.json({ error: 'Failed to fetch deck' }, { status: 500 })
+    console.error("Error fetching deck:", error);
+    return NextResponse.json({ error: "Failed to fetch deck" }, { status: 500 });
   }
 }
 
 // PATCH /api/decks/[deckId] - Update a deck
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
-    const { deckId } = await params
-    const supabase = await createClient()
+    const { deckId } = await params;
+    const supabase = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { name, description, color } = body
+    const body = await request.json();
+    const { name, description, color } = body;
 
     // Verify the deck belongs to the user
     const existingDeck = await prisma.deck.findFirst({
@@ -73,16 +73,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         id: deckId,
         userId: user.id,
       },
-    })
+    });
 
     if (!existingDeck) {
-      return NextResponse.json({ error: 'Deck not found' }, { status: 404 })
+      return NextResponse.json({ error: "Deck not found" }, { status: 404 });
     }
 
-    const updateData: any = {}
-    if (name !== undefined) updateData.name = name
-    if (description !== undefined) updateData.description = description
-    if (color !== undefined) updateData.color = color
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (color !== undefined) updateData.color = color;
 
     const deck = await prisma.deck.update({
       where: { id: deckId },
@@ -92,29 +92,29 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           select: { Flashcard: true },
         },
       },
-    })
+    });
 
     // Log activity
-    await logDeckUpdated(user.id, deck.id, deck.name)
+    await logDeckUpdated(user.id, deck.id, deck.name);
 
-    return NextResponse.json(deck)
+    return NextResponse.json(deck);
   } catch (error) {
-    console.error('Error updating deck:', error)
-    return NextResponse.json({ error: 'Failed to update deck' }, { status: 500 })
+    console.error("Error updating deck:", error);
+    return NextResponse.json({ error: "Failed to update deck" }, { status: 500 });
   }
 }
 
 // DELETE /api/decks/[deckId] - Delete a deck
-export async function DELETE(_request: NextRequest, { params }: Params) {
+export async function DELETE({ params }: Params) {
   try {
-    const { deckId } = await params
-    const supabase = await createClient()
+    const { deckId } = await params;
+    const supabase = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Verify the deck belongs to the user and get all flashcards with tags
@@ -132,27 +132,27 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
           },
         },
       },
-    })
+    });
 
     if (!existingDeck) {
-      return NextResponse.json({ error: 'Deck not found' }, { status: 404 })
+      return NextResponse.json({ error: "Deck not found" }, { status: 404 });
     }
 
     // Collect all tag IDs from flashcards in this deck
-    const tagIds = new Set<string>()
+    const tagIds = new Set<string>();
     existingDeck.Flashcard.forEach((flashcard) => {
       flashcard.Tag.forEach((tag) => {
-        tagIds.add(tag.id)
-      })
-    })
+        tagIds.add(tag.id);
+      });
+    });
 
     // Log activity before deletion
-    await logDeckDeleted(user.id, existingDeck.name)
+    await logDeckDeleted(user.id, existingDeck.name);
 
     // Delete the deck (this will cascade delete all flashcards)
     await prisma.deck.delete({
       where: { id: deckId },
-    })
+    });
 
     // Clean up orphaned tags
     for (const tagId of tagIds) {
@@ -167,24 +167,22 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
             },
           },
         },
-      })
+      });
 
       if (tagWithUsage) {
-        const totalUsage =
-          tagWithUsage._count.Note +
-          tagWithUsage._count.Task +
-          tagWithUsage._count.Flashcard
+        const totalUsage = tagWithUsage._count.Note + tagWithUsage._count.Task + tagWithUsage._count.Flashcard;
         if (totalUsage === 0) {
           await prisma.tag.delete({
             where: { id: tagId },
-          })
+          });
         }
       }
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting deck:', error)
-    return NextResponse.json({ error: 'Failed to delete deck' }, { status: 500 })
+    console.error("Error deleting deck:", error);
+    return NextResponse.json({ error: "Failed to delete deck" }, { status: 500 });
   }
 }
+

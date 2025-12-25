@@ -1,19 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
-import { incrementDailyProgress } from '@/lib/progress-tracker'
-import { logNoteCreated } from '@/lib/activity-logger'
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { incrementDailyProgress } from "@/lib/progress-tracker";
+import { logNoteCreated } from "@/lib/activity-logger";
 
 // GET - List all notes for the authenticated user
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const notes = await prisma.note.findMany({
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         userId: user.id,
       },
       orderBy: {
-        updatedAt: 'desc',
+        updatedAt: "desc",
       },
       select: {
         id: true,
@@ -37,47 +37,50 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-    })
+    });
 
-    return NextResponse.json({ notes })
+    return NextResponse.json({ notes });
   } catch (error: any) {
-    console.error('Error fetching notes:', error)
-    return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 })
+    console.error("Error fetching notes:", error);
+    return NextResponse.json({ error: "Failed to fetch notes" }, { status: 500 });
   }
 }
 
 // POST - Create a new note
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, content, folderId, tagIds, noteLinks } = await request.json()
+    const { title, content, folderId, tagIds, noteLinks } = await request.json();
 
     if (!title) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+      return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
     const note = await prisma.note.create({
       data: {
         title,
-        content: content || '<p></p>',
+        content: content || "<p></p>",
         userId: user.id,
         folderId: folderId || null,
-        Tag: tagIds && tagIds.length > 0 ? {
-          connect: tagIds.map((id: string) => ({ id })),
-        } : undefined,
+        Tag:
+          tagIds && tagIds.length > 0
+            ? {
+                connect: tagIds.map((id: string) => ({ id })),
+              }
+            : undefined,
       },
       include: {
         Tag: true,
       },
-    })
+    });
 
     // Create note links if provided
     if (noteLinks && noteLinks.length > 0) {
@@ -87,24 +90,25 @@ export async function POST(request: NextRequest) {
           toNoteId,
         })),
         skipDuplicates: true,
-      })
+      });
     }
 
     // Track progress - note created
-    await incrementDailyProgress(user.id, 'noteCreated')
+    await incrementDailyProgress(user.id, "noteCreated");
 
     // Log activity
-    await logNoteCreated(user.id, note.id, note.title)
+    await logNoteCreated(user.id, note.id, note.title);
 
-    return NextResponse.json({ note }, { status: 201 })
+    return NextResponse.json({ note }, { status: 201 });
   } catch (error: any) {
-    console.error('Error creating note:', error)
+    console.error("Error creating note:", error);
 
     // Handle unique constraint violation
-    if (error.code === 'P2002') {
-      return NextResponse.json({ error: 'A note with this title already exists' }, { status: 409 })
+    if (error.code === "P2002") {
+      return NextResponse.json({ error: "A note with this title already exists" }, { status: 409 });
     }
 
-    return NextResponse.json({ error: 'Failed to create note' }, { status: 500 })
+    return NextResponse.json({ error: "Failed to create note" }, { status: 500 });
   }
 }
+

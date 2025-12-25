@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Timer, Play, Pause, X, Maximize2, Music, SkipForward, SkipBack, Repeat, Coffee, Clock } from "lucide-react";
 import { useTimer } from "@/contexts/timer-context";
@@ -32,6 +32,17 @@ export default function FloatingTimer() {
     seekAudio,
   } = useTimer();
   const [isMinimized, setIsMinimized] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Only render after client-side hydration to avoid mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Don't render until mounted to avoid hydration mismatch
+  if (!isMounted) {
+    return null;
+  }
 
   // Don't show on focus page or login/signup pages
   if (pathname?.startsWith("/focus") || pathname?.startsWith("/login") || pathname?.startsWith("/signup") || pathname === "/") {

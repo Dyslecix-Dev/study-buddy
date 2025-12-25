@@ -66,11 +66,12 @@ export default function FocusPage() {
 
       if (!user) {
         router.push("/login");
+      } else {
+        fetchTodayStats();
       }
     };
 
     checkAuth();
-    fetchTodayStats();
 
     // Set the session complete callback
     setOnSessionComplete(handleSessionComplete);
@@ -85,9 +86,7 @@ export default function FocusPage() {
           <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--text-primary)" }}>
             Focus Timer
           </h1>
-          <p style={{ color: "var(--text-secondary)" }}>
-            Use the Pomodoro Technique to boost your productivity and maintain focus.
-          </p>
+          <p style={{ color: "var(--text-secondary)" }}>Use the Pomodoro Technique to boost your productivity and maintain focus.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -117,7 +116,7 @@ export default function FocusPage() {
               <div className="flex items-center gap-2 mb-4">
                 <Clock size={20} style={{ color: "var(--primary)" }} />
                 <h3 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-                  Today's Focus
+                  Today&apos;s Focus
                 </h3>
               </div>
               <div className="space-y-4">
@@ -151,11 +150,7 @@ export default function FocusPage() {
               {recentSessions.length > 0 ? (
                 <div className="space-y-3">
                   {recentSessions.slice(0, 5).map((session) => (
-                    <div
-                      key={session.id}
-                      className="flex items-center justify-between py-2 border-b last:border-b-0"
-                      style={{ borderColor: "var(--border)" }}
-                    >
+                    <div key={session.id} className="flex items-center justify-between py-2 border-b last:border-b-0" style={{ borderColor: "var(--border)" }}>
                       <div>
                         <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                           {session.mode === "work" ? "Focus" : session.mode === "shortBreak" ? "Short Break" : "Long Break"}
@@ -182,3 +177,4 @@ export default function FocusPage() {
     </div>
   );
 }
+

@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 
 // GET /api/search - Get all searchable content for the current user
 export async function GET() {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Fetch folders, notes, tasks, flashcards, and tags in parallel
@@ -95,7 +95,7 @@ export async function GET() {
           },
         },
       }),
-    ])
+    ]);
 
     return NextResponse.json({
       folders,
@@ -103,9 +103,10 @@ export async function GET() {
       tasks,
       decks,
       tags,
-    })
+    });
   } catch (error) {
-    console.error('Error fetching search data:', error)
-    return NextResponse.json({ error: 'Failed to fetch search data' }, { status: 500 })
+    console.error("Error fetching search data:", error);
+    return NextResponse.json({ error: "Failed to fetch search data" }, { status: 500 });
   }
 }
+

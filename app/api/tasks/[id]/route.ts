@@ -1,26 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
-import { incrementDailyProgress, decrementDailyProgress } from '@/lib/progress-tracker'
-import { logTaskCompleted, logTaskUncompleted, logTaskDeleted } from '@/lib/activity-logger'
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { incrementDailyProgress, decrementDailyProgress } from "@/lib/progress-tracker";
+import { logTaskCompleted, logTaskUncompleted, logTaskDeleted } from "@/lib/activity-logger";
 
 type Params = {
   params: Promise<{
-    id: string
-  }>
-}
+    id: string;
+  }>;
+};
 
 // GET /api/tasks/[id] - Get a specific task
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET({ params }: Params) {
   try {
-    const { id } = await params
-    const supabase = await createClient()
+    const { id } = await params;
+    const supabase = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const task = await prisma.task.findFirst({
@@ -31,34 +31,34 @@ export async function GET(request: NextRequest, { params }: Params) {
       include: {
         Tag: true,
       },
-    })
+    });
 
     if (!task) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
-    return NextResponse.json(task)
+    return NextResponse.json(task);
   } catch (error) {
-    console.error('Error fetching task:', error)
-    return NextResponse.json({ error: 'Failed to fetch task' }, { status: 500 })
+    console.error("Error fetching task:", error);
+    return NextResponse.json({ error: "Failed to fetch task" }, { status: 500 });
   }
 }
 
 // PATCH /api/tasks/[id] - Update a task
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
-    const { id } = await params
-    const supabase = await createClient()
+    const { id } = await params;
+    const supabase = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { title, description, completed, startTime, endTime, priority, order, tagIds } = body
+    const body = await request.json();
+    const { title, description, completed, startTime, endTime, priority, order, tagIds } = body;
 
     // Verify the task belongs to the user
     const existingTask = await prisma.task.findFirst({
@@ -66,48 +66,48 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         id,
         userId: user.id,
       },
-    })
+    });
 
     if (!existingTask) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
-    const updateData: any = {}
-    if (title !== undefined) updateData.title = title
-    if (description !== undefined) updateData.description = description
-    if (completed !== undefined) updateData.completed = completed
-    if (startTime !== undefined) updateData.startTime = startTime ? new Date(startTime) : null
-    if (endTime !== undefined) updateData.endTime = endTime ? new Date(endTime) : null
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (completed !== undefined) updateData.completed = completed;
+    if (startTime !== undefined) updateData.startTime = startTime ? new Date(startTime) : null;
+    if (endTime !== undefined) updateData.endTime = endTime ? new Date(endTime) : null;
 
     // Auto-update dueDate based on endTime or startTime
     if (endTime !== undefined || startTime !== undefined) {
       if (endTime) {
-        updateData.dueDate = new Date(endTime)
+        updateData.dueDate = new Date(endTime);
       } else if (startTime) {
-        updateData.dueDate = new Date(startTime)
+        updateData.dueDate = new Date(startTime);
       } else {
-        updateData.dueDate = null
+        updateData.dueDate = null;
       }
     }
 
-    if (priority !== undefined) updateData.priority = priority
-    if (order !== undefined) updateData.order = order
+    if (priority !== undefined) updateData.priority = priority;
+    if (order !== undefined) updateData.order = order;
 
     // Track progress when task completion status changes
     if (completed !== undefined && completed !== existingTask.completed) {
       if (completed) {
         // Task is being completed
-        await incrementDailyProgress(user.id, 'taskCompleted')
-        await logTaskCompleted(user.id, id, existingTask.title)
+        await incrementDailyProgress(user.id, "taskCompleted");
+        await logTaskCompleted(user.id, id, existingTask.title);
       } else {
         // Task is being uncompleted - decrement the count
-        await decrementDailyProgress(user.id, 'taskCompleted', existingTask.updatedAt)
-        await logTaskUncompleted(user.id, id, existingTask.title)
+        await decrementDailyProgress(user.id, "taskCompleted", existingTask.updatedAt);
+        await logTaskUncompleted(user.id, id, existingTask.title);
       }
     }
 
     // Handle tag updates
-    let removedTagIds: string[] = []
+    let removedTagIds: string[] = [];
     if (tagIds !== undefined) {
       // Get current tags to determine which were removed
       const taskWithTags = await prisma.task.findUnique({
@@ -117,16 +117,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
             select: { id: true },
           },
         },
-      })
+      });
 
       if (taskWithTags) {
-        const currentIds = taskWithTags.Tag.map(t => t.id)
-        removedTagIds = currentIds.filter(tagId => !tagIds.includes(tagId))
+        const currentIds = taskWithTags.Tag.map((t) => t.id);
+        removedTagIds = currentIds.filter((tagId) => !tagIds.includes(tagId));
       }
 
       updateData.Tag = {
         set: tagIds.map((id: string) => ({ id })),
-      }
+      };
     }
 
     const task = await prisma.task.update({
@@ -135,7 +135,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       include: {
         Tag: true,
       },
-    })
+    });
 
     // Clean up unused tags
     for (const tagId of removedTagIds) {
@@ -150,36 +150,36 @@ export async function PATCH(request: NextRequest, { params }: Params) {
             },
           },
         },
-      })
+      });
 
       if (tagWithUsage) {
-        const totalUsage = tagWithUsage._count.Note + tagWithUsage._count.Task + tagWithUsage._count.Flashcard
+        const totalUsage = tagWithUsage._count.Note + tagWithUsage._count.Task + tagWithUsage._count.Flashcard;
         if (totalUsage === 0) {
           await prisma.tag.delete({
             where: { id: tagId },
-          })
+          });
         }
       }
     }
 
-    return NextResponse.json(task)
+    return NextResponse.json(task);
   } catch (error) {
-    console.error('Error updating task:', error)
-    return NextResponse.json({ error: 'Failed to update task' }, { status: 500 })
+    console.error("Error updating task:", error);
+    return NextResponse.json({ error: "Failed to update task" }, { status: 500 });
   }
 }
 
 // DELETE /api/tasks/[id] - Delete a task
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const { id } = await params
-    const supabase = await createClient()
+    const { id } = await params;
+    const supabase = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Verify the task belongs to the user
@@ -188,10 +188,10 @@ export async function DELETE(request: NextRequest, { params }: Params) {
         id,
         userId: user.id,
       },
-    })
+    });
 
     if (!existingTask) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
     // Get tags before deletion for cleanup
@@ -202,16 +202,16 @@ export async function DELETE(request: NextRequest, { params }: Params) {
           select: { id: true },
         },
       },
-    })
+    });
 
-    const tagIds = taskWithTags?.Tag.map(t => t.id) || []
+    const tagIds = taskWithTags?.Tag.map((t) => t.id) || [];
 
     // Log activity before deletion
-    await logTaskDeleted(user.id, existingTask.title)
+    await logTaskDeleted(user.id, existingTask.title);
 
     await prisma.task.delete({
       where: { id },
-    })
+    });
 
     // Clean up unused tags
     for (const tagId of tagIds) {
@@ -226,21 +226,22 @@ export async function DELETE(request: NextRequest, { params }: Params) {
             },
           },
         },
-      })
+      });
 
       if (tagWithUsage) {
-        const totalUsage = tagWithUsage._count.Note + tagWithUsage._count.Task + tagWithUsage._count.Flashcard
+        const totalUsage = tagWithUsage._count.Note + tagWithUsage._count.Task + tagWithUsage._count.Flashcard;
         if (totalUsage === 0) {
           await prisma.tag.delete({
             where: { id: tagId },
-          })
+          });
         }
       }
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting task:', error)
-    return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 })
+    console.error("Error deleting task:", error);
+    return NextResponse.json({ error: "Failed to delete task" }, { status: 500 });
   }
 }
+

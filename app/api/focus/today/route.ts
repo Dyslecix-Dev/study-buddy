@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient();
     const {
@@ -31,9 +31,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate total minutes for work sessions only
-    const totalMinutes = sessions
-      .filter((s) => s.mode === "work")
-      .reduce((sum, session) => sum + session.duration, 0);
+    const totalMinutes = sessions.filter((s) => s.mode === "work").reduce((sum, session) => sum + session.duration, 0);
 
     // Count work sessions
     const sessionCount = sessions.filter((s) => s.mode === "work").length;
@@ -48,3 +46,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
   }
 }
+

@@ -3,8 +3,18 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "./theme-provider";
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  iconOnly?: boolean;
+}
+
+export function ThemeToggle({ iconOnly = false }: ThemeToggleProps) {
   const { theme, toggleTheme } = useTheme();
+
+  const icon = theme === "light" ? <Moon size={18} /> : <Sun size={18} />;
+
+  if (iconOnly) {
+    return icon;
+  }
 
   return (
     <button
@@ -22,7 +32,7 @@ export function ThemeToggle() {
       }}
       aria-label="Toggle theme"
     >
-      {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+      {icon}
     </button>
   );
 }

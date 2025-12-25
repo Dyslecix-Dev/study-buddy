@@ -1,17 +1,169 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import SearchTrigger from "@/components/search/search-trigger";
+import AvatarDropdown from "@/components/avatar-dropdown";
+import { Menu, X, FileText, CheckSquare, Brain, Timer, Settings, LogOut, Search } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
-import LogoutButton from "@/components/logout-button";
-import { Menu, X, FileText, CheckSquare, Brain, Timer } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
+import { getUserInitials } from "@/lib/avatar-utils";
+
+interface MobileProfileButtonsProps {
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    image: string | null;
+  };
+  isLoading: boolean;
+  onItemClick: () => void;
+}
+
+function MobileProfileButtons({ user, isLoading, onItemClick }: MobileProfileButtonsProps) {
+  const router = useRouter();
+  const { toggleTheme } = useTheme();
+  const initials = getUserInitials(user.name, user.email);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
+  return (
+    <>
+      {/* Settings */}
+      <button
+        onClick={() => {
+          onItemClick();
+          router.push("/settings");
+        }}
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-base font-medium transition-colors duration-300"
+        style={{ color: "var(--text-secondary)" }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = "var(--text-primary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = "var(--text-secondary)";
+        }}
+      >
+        <Settings size={20} />
+        Settings
+      </button>
+
+      {/* Theme */}
+      <button
+        onClick={() => {
+          toggleTheme();
+        }}
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-base font-medium transition-colors duration-300"
+        style={{ color: "var(--text-secondary)" }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = "var(--text-primary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = "var(--text-secondary)";
+        }}
+      >
+        <ThemeToggle iconOnly />
+        Theme
+      </button>
+
+      {/* Search + Avatar */}
+      <div className="flex items-center gap-3 px-3 py-2">
+        <Search size={20} style={{ color: "var(--text-secondary)" }} />
+        <div className="flex-1 text-base font-medium" style={{ color: "var(--text-secondary)" }}>
+          Search
+        </div>
+        {isLoading ? (
+          <div
+            className="w-10 h-10 rounded-full animate-pulse"
+            style={{ backgroundColor: "var(--surface-secondary)" }}
+          />
+        ) : (
+          user.image ? (
+            <Image
+              src={user.image}
+              alt={user.name || "User avatar"}
+              width={40}
+              height={40}
+              className="rounded-full object-cover"
+              style={{ width: "40px", height: "40px" }}
+              unoptimized={user.image.includes("dicebear.com")}
+            />
+          ) : (
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold"
+              style={{
+                backgroundColor: "var(--primary)",
+                color: "#1a1a1a",
+              }}
+            >
+              {initials}
+            </div>
+          )
+        )}
+      </div>
+
+      {/* Logout */}
+      <button
+        onClick={() => {
+          onItemClick();
+          handleLogout();
+        }}
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-base font-medium transition-colors duration-300"
+        style={{ color: "#ef4444" }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "var(--surface-secondary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "transparent";
+        }}
+      >
+        <LogOut size={20} />
+        Logout
+      </button>
+    </>
+  );
+}
 
 export default function DashboardNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<{
+    id: string;
+    email: string;
+    name: string | null;
+    image: string | null;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+
+        if (authUser) {
+          const response = await fetch(`/api/users/${authUser.id}`);
+          if (response.ok) {
+            const userData = await response.json();
+            setUser(userData);
+          }
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const navigation = [
     { name: "Notes", href: "/notes", icon: FileText },
@@ -66,8 +218,14 @@ export default function DashboardNav() {
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-4">
               <SearchTrigger />
-              <ThemeToggle />
-              <LogoutButton />
+              {isLoading ? (
+                <div
+                  className="w-10 h-10 rounded-full animate-pulse"
+                  style={{ backgroundColor: "var(--surface-secondary)" }}
+                />
+              ) : (
+                user && <AvatarDropdown user={user} />
+              )}
             </div>
 
             {/* Mobile menu button */}
@@ -100,13 +258,8 @@ export default function DashboardNav() {
                 </Link>
               );
             })}
-          </div>
-          <div className="pt-4 pb-3 border-t" style={{ borderColor: "var(--border)" }}>
-            <div className="flex items-center justify-around px-5">
-              <SearchTrigger />
-              <ThemeToggle />
-              <LogoutButton />
-            </div>
+
+            {user && <MobileProfileButtons user={user} isLoading={isLoading} onItemClick={() => setMobileMenuOpen(false)} />}
           </div>
         </div>
       )}

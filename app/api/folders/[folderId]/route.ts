@@ -8,7 +8,7 @@ type Params = Promise<{
 }>;
 
 // GET /api/folders/[folderId] - Get a specific folder with its notes
-export async function GET(request: NextRequest, { params }: { params: Params }) {
+export async function GET({ params }: { params: Params }) {
   try {
     const { folderId } = await params;
     const supabase = await createClient();
@@ -99,7 +99,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
 }
 
 // DELETE /api/folders/[folderId] - Delete a folder
-export async function DELETE(request: NextRequest, { params }: { params: Params }) {
+export async function DELETE({ params }: { params: Params }) {
   try {
     const { folderId } = await params;
     const supabase = await createClient();
@@ -162,10 +162,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Params 
       });
 
       if (tagWithUsage) {
-        const totalUsage =
-          tagWithUsage._count.Note +
-          tagWithUsage._count.Task +
-          tagWithUsage._count.Flashcard;
+        const totalUsage = tagWithUsage._count.Note + tagWithUsage._count.Task + tagWithUsage._count.Flashcard;
         if (totalUsage === 0) {
           await prisma.tag.delete({
             where: { id: tagId },
@@ -188,3 +185,4 @@ export async function DELETE(request: NextRequest, { params }: { params: Params 
     return NextResponse.json({ error: "Failed to delete folder" }, { status: 500 });
   }
 }
+

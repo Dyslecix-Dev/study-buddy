@@ -1,4 +1,4 @@
-import { PrismaClient } from "../app/generated/prisma/client";
+import { PrismaClient } from "@/app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
@@ -8,16 +8,17 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Modify connection string to disable SSL verification
-const connectionString = (process.env.DIRECT_URL || process.env.DATABASE_URL || "")
-  .replace("sslmode=require", "sslmode=no-verify");
+const connectionString = (process.env.DIRECT_URL || process.env.DATABASE_URL || "").replace("sslmode=require", "sslmode=no-verify");
 
 // Create connection pool with SSL configuration
-const pool = globalForPrisma.pool ?? new Pool({
-  connectionString,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
+const pool =
+  globalForPrisma.pool ??
+  new Pool({
+    connectionString,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  });
 if (process.env.NODE_ENV !== "production") globalForPrisma.pool = pool;
 
 // Create adapter

@@ -1,9 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { generateDefaultAvatar } from "@/lib/avatar-utils";
 
 export async function POST(request: NextRequest) {
   try {
-    const { id, email, name } = await request.json()
+    const { id, email, name, image } = await request.json();
+
+    // Generate default avatar if no image provided
+    const avatarUrl = image || generateDefaultAvatar(email, "initials");
 
     // Create user in database
     const user = await prisma.user.create({
@@ -11,15 +15,14 @@ export async function POST(request: NextRequest) {
         id,
         email,
         name,
+        image: avatarUrl,
       },
-    })
+    });
 
-    return NextResponse.json({ user }, { status: 201 })
+    return NextResponse.json({ user }, { status: 201 });
   } catch (error: any) {
-    console.error('Error creating user:', error)
-    return NextResponse.json(
-      { error: 'Failed to create user' },
-      { status: 500 }
-    )
+    console.error("Error creating user:", error);
+    return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
   }
 }
+

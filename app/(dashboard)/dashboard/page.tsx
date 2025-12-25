@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { FileText, CheckSquare, Brain, Calendar } from "lucide-react";
+import { FileText, CheckSquare, Brain } from "lucide-react";
 import DashboardNav from "@/components/dashboard-nav";
 import { ProgressDashboard } from "@/components/dashboard/progress-dashboard";
 

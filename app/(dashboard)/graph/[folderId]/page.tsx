@@ -1,14 +1,12 @@
 "use client";
 
 import { use } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import DashboardNav from "@/components/dashboard-nav";
 import { KnowledgeGraph } from "@/components/graph/knowledge-graph";
 
 export default function FolderGraphPage({ params }: { params: Promise<{ folderId: string }> }) {
   const { folderId } = use(params);
-  const router = useRouter();
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
@@ -32,3 +30,4 @@ export default function FolderGraphPage({ params }: { params: Promise<{ folderId
     </div>
   );
 }
+

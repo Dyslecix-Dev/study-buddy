@@ -2,22 +2,21 @@
  * Utilities for cleaning up Vercel Blob storage
  */
 
-import { list, del } from '@vercel/blob'
+import { list, del } from "@vercel/blob";
 
 /**
  * Delete all images associated with a specific note
  */
 export async function deleteNoteImages(userId: string, noteId: string) {
   try {
-    const prefix = `users/${userId}/notes/${noteId}/`
-    const { blobs } = await list({ prefix })
+    const prefix = `users/${userId}/notes/${noteId}/`;
+    const { blobs } = await list({ prefix });
 
     if (blobs.length > 0) {
-      await del(blobs.map(blob => blob.url))
-      console.log(`Deleted ${blobs.length} images for note ${noteId}`)
+      await del(blobs.map((blob) => blob.url));
     }
   } catch (error) {
-    console.error(`Failed to delete images for note ${noteId}:`, error)
+    console.error(`Failed to delete images for note ${noteId}:`, error);
     // Don't throw - we don't want to fail note deletion if blob cleanup fails
   }
 }
@@ -27,15 +26,14 @@ export async function deleteNoteImages(userId: string, noteId: string) {
  */
 export async function deleteFlashcardImages(userId: string, flashcardId: string) {
   try {
-    const prefix = `users/${userId}/flashcards/${flashcardId}/`
-    const { blobs } = await list({ prefix })
+    const prefix = `users/${userId}/flashcards/${flashcardId}/`;
+    const { blobs } = await list({ prefix });
 
     if (blobs.length > 0) {
-      await del(blobs.map(blob => blob.url))
-      console.log(`Deleted ${blobs.length} images for flashcard ${flashcardId}`)
+      await del(blobs.map((blob) => blob.url));
     }
   } catch (error) {
-    console.error(`Failed to delete images for flashcard ${flashcardId}:`, error)
+    console.error(`Failed to delete images for flashcard ${flashcardId}:`, error);
     // Don't throw - we don't want to fail flashcard deletion if blob cleanup fails
   }
 }
@@ -45,15 +43,14 @@ export async function deleteFlashcardImages(userId: string, flashcardId: string)
  */
 export async function deleteUserImages(userId: string) {
   try {
-    const prefix = `users/${userId}/`
-    const { blobs } = await list({ prefix })
+    const prefix = `users/${userId}/`;
+    const { blobs } = await list({ prefix });
 
     if (blobs.length > 0) {
-      await del(blobs.map(blob => blob.url))
-      console.log(`Deleted ${blobs.length} images for user ${userId}`)
+      await del(blobs.map((blob) => blob.url));
     }
   } catch (error) {
-    console.error(`Failed to delete images for user ${userId}:`, error)
+    console.error(`Failed to delete images for user ${userId}:`, error);
     // Don't throw - we don't want to fail user deletion if blob cleanup fails
   }
 }
@@ -62,15 +59,15 @@ export async function deleteUserImages(userId: string) {
  * Extract image URLs from HTML content
  */
 export function extractImageUrls(html: string): string[] {
-  const imgRegex = /<img[^>]+src="([^">]+)"/g
-  const urls: string[] = []
-  let match
+  const imgRegex = /<img[^>]+src="([^">]+)"/g;
+  const urls: string[] = [];
+  let match;
 
   while ((match = imgRegex.exec(html)) !== null) {
-    urls.push(match[1])
+    urls.push(match[1]);
   }
 
-  return urls
+  return urls;
 }
 
 /**
@@ -79,11 +76,11 @@ export function extractImageUrls(html: string): string[] {
 export async function deleteImagesByUrl(urls: string[]) {
   try {
     if (urls.length > 0) {
-      await del(urls)
-      console.log(`Deleted ${urls.length} images by URL`)
+      await del(urls);
     }
   } catch (error) {
-    console.error('Failed to delete images by URL:', error)
+    console.error("Failed to delete images by URL:", error);
     // Don't throw
   }
 }
+

@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
       update: {},
       create: {
         id: user.id,
-        email: user.email || '',
-        name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+        email: user.email || "",
+        name: user.user_metadata?.name || user.email?.split("@")[0] || "User",
       },
     });
 
@@ -45,12 +45,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Track focus minutes in DailyProgress for permanent record
-    await incrementDailyProgress(user.id, 'focusSession', new Date(), roundedDuration);
+    await incrementDailyProgress(user.id, "focusSession", new Date(), roundedDuration);
 
     // Log activity for recent activity feed
     await logFocusSession(user.id, session.id, mode, roundedDuration);
-
-    console.log(`✅ Focus session created: ${roundedDuration} minutes for user ${user.id}`);
 
     return NextResponse.json(session, { status: 201 });
   } catch (error) {
@@ -58,3 +56,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create session" }, { status: 500 });
   }
 }
+
