@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { Tag } from "@/lib/tag-utils";
 import TagInput from "@/components/tags/tag-input";
 import Editor from "@/components/editor/editor";
+import Button from "@/components/ui/button";
 
 interface FlashcardFormProps {
   onSubmit: (data: { front: string; back: string; tagIds?: string[] }) => Promise<void>;
@@ -113,29 +114,12 @@ export default function FlashcardForm({ onSubmit, onCancel, initialData, isEdit 
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-            className="px-4 py-2 rounded-md text-sm font-medium transition-colors duration-300 disabled:opacity-50 cursor-pointer"
-            style={{
-              borderColor: "var(--border)",
-              color: "var(--text-secondary)",
-              backgroundColor: "var(--surface)",
-              borderWidth: "1px",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-hover)")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface)")}
-          >
+          <Button type="button" onClick={onCancel} disabled={loading} variant="secondary">
             Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors duration-300 disabled:opacity-50 cursor-pointer"
-          >
-            {loading ? "Saving..." : isEdit ? "Save Changes" : "Add Flashcard"}
-          </button>
+          </Button>
+          <Button type="submit" isLoading={loading} variant="primary">
+            {isEdit ? "Save Changes" : "Add Flashcard"}
+          </Button>
         </div>
       </div>
     </form>

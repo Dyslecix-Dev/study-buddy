@@ -229,7 +229,7 @@ export default function ExamsPage() {
             {exams.map((exam) => (
               <div key={exam.id} className="p-6 rounded-lg shadow hover:shadow-lg transition-shadow" style={{ backgroundColor: "var(--surface)" }}>
                 <div className="flex justify-between items-start mb-4">
-                  <Link href={`/exams/${exam.id}`} className="flex-1">
+                  <Link href={`/exams/${exam.id}`} className="flex-1 transition-colors duration-300 cursor-pointer hover:opacity-80">
                     <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
                       {exam.name}
                     </h3>
@@ -251,7 +251,7 @@ export default function ExamsPage() {
                     </button>
                   </div>
                 </div>
-                <Link href={`/exams/${exam.id}`} className="block w-full text-center px-4 py-2 rounded-md transition-colors" style={{ backgroundColor: "var(--primary)", color: "#1a1a1a" }}>
+                <Link href={`/exams/${exam.id}`} className="block w-full text-center px-4 py-2 rounded-md transition-colors duration-300 cursor-pointer hover:opacity-90" style={{ backgroundColor: "var(--primary)", color: "#1a1a1a" }}>
                   View Exam
                 </Link>
               </div>

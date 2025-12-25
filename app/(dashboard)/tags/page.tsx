@@ -8,6 +8,7 @@ import { Plus, Edit2, Trash2, Hash } from "lucide-react";
 import TagBadge from "@/components/tags/tag-badge";
 import { Tag, TAG_COLORS, getRandomTagColor } from "@/lib/tag-utils";
 import { toast } from "sonner";
+import Button from "@/components/ui/button";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 
 interface TagWithCounts extends Tag {

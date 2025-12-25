@@ -6,6 +6,7 @@ import Flashcard from "./flashcard";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getIntervalDescription } from "@/lib/spaced-repetition";
+import Button from "@/components/ui/button";
 
 interface FlashcardData {
   id: string;
@@ -221,34 +222,30 @@ export default function StudySession({ deckId, flashcards }: StudySessionProps) 
 
       {/* Navigation */}
       <div className="flex items-center justify-between">
-        <button
+        <Button
           onClick={handlePrevious}
           disabled={currentIndex === 0}
-          className="flex items-center gap-2 px-4 py-2 rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300 border"
-          style={{
-            backgroundColor: "var(--surface)",
-            borderColor: "var(--border)",
-            color: "var(--text-primary)",
-          }}
+          variant="secondary"
+          icon={<ChevronLeft size={18} />}
+          iconPosition="left"
         >
-          <ChevronLeft size={18} />
           Previous
-        </button>
+        </Button>
 
         {allReviewed ? (
-          <button onClick={handleFinish} className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-300 font-medium cursor-pointer">
+          <Button onClick={handleFinish} variant="success" size="lg">
             Finish Session
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             onClick={handleNext}
             disabled={isLastCard}
-            className="flex items-center gap-2 px-4 py-2 rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
-            style={{ backgroundColor: "var(--secondary)", color: "white" }}
+            variant="primary"
+            icon={<ChevronRight size={18} />}
+            iconPosition="right"
           >
             Next
-            <ChevronRight size={18} />
-          </button>
+          </Button>
         )}
       </div>
 

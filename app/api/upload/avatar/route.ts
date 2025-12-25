@@ -2,6 +2,7 @@ import { put, del } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { revalidateUserCache } from "@/lib/cache-utils";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"];
@@ -69,6 +70,9 @@ export async function POST(request: NextRequest) {
       where: { id: user.id },
       data: { image: blob.url },
     });
+
+    // Revalidate the user cache so the navbar shows the new avatar
+    revalidateUserCache(user.id);
 
     return NextResponse.json({
       url: blob.url,

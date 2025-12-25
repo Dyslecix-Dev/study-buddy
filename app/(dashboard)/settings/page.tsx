@@ -6,9 +6,10 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import DashboardNav from "@/components/dashboard-nav";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Camera, Upload } from "lucide-react";
+import { Camera, Upload, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { getUserInitials, isDefaultAvatar } from "@/lib/avatar-utils";
+import Button from "@/components/ui/button";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -21,6 +22,15 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Password reset state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -96,6 +106,57 @@ export default function SettingsPage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate passwords
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setUpdatingPassword(true);
+
+    try {
+      const supabase = createClient();
+
+      // Verify current password by attempting to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user!.email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        throw new Error('Current password is incorrect');
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) throw updateError;
+
+      toast.success('Password updated successfully!');
+
+      // Clear form
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+
+    } catch (error) {
+      console.error('Password update error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update password');
+    } finally {
+      setUpdatingPassword(false);
     }
   };
 
@@ -178,18 +239,15 @@ export default function SettingsPage() {
                   ? "Add a profile photo to personalize your account"
                   : "Update your profile photo"}
               </p>
-              <button
+              <Button
                 onClick={handleAvatarClick}
-                disabled={uploading}
-                className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{
-                  backgroundColor: "var(--primary)",
-                  color: "#1a1a1a",
-                }}
+                isLoading={uploading}
+                variant="primary"
+                icon={<Upload size={18} />}
+                iconPosition="left"
               >
-                <Upload size={16} />
-                {uploading ? 'Uploading...' : 'Upload Photo'}
-              </button>
+                Upload Photo
+              </Button>
               <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
                 PNG, JPG, GIF or WebP. Max 5MB.
               </p>
@@ -243,6 +301,113 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Password Section */}
+        <div className="rounded-lg shadow p-6" style={{ backgroundColor: "var(--surface)" }}>
+          <h2 className="text-xl font-semibold mb-4" style={{ color: "var(--text-primary)" }}>
+            Change Password
+          </h2>
+
+          <form onSubmit={handlePasswordUpdate} className="space-y-4">
+            <div>
+              <label htmlFor="current-password" className="block text-sm font-medium mb-1" style={{ color: "var(--text-primary)" }}>
+                Current Password
+              </label>
+              <div className="relative">
+                <input
+                  id="current-password"
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 pr-10 rounded-md border"
+                  style={{
+                    backgroundColor: "var(--surface)",
+                    borderColor: "var(--border)",
+                    color: "var(--text-primary)",
+                  }}
+                  placeholder="Enter current password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {showCurrentPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="new-password" className="block text-sm font-medium mb-1" style={{ color: "var(--text-primary)" }}>
+                New Password
+              </label>
+              <div className="relative">
+                <input
+                  id="new-password"
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 pr-10 rounded-md border"
+                  style={{
+                    backgroundColor: "var(--surface)",
+                    borderColor: "var(--border)",
+                    color: "var(--text-primary)",
+                  }}
+                  placeholder="Enter new password (min 6 characters)"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="confirm-password" className="block text-sm font-medium mb-1" style={{ color: "var(--text-primary)" }}>
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <input
+                  id="confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 pr-10 rounded-md border"
+                  style={{
+                    backgroundColor: "var(--surface)",
+                    borderColor: "var(--border)",
+                    color: "var(--text-primary)",
+                  }}
+                  placeholder="Confirm new password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              isLoading={updatingPassword}
+              variant="primary"
+            >
+              Update Password
+            </Button>
+          </form>
         </div>
       </div>
     </div>

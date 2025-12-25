@@ -259,7 +259,7 @@ export default function FolderDetailPage() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredNotes.map((note) => (
               <div key={note.id} className="rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden" style={{ backgroundColor: "var(--surface)" }}>
-                <Link href={`/notes/${folderId}/edit/${note.id}`} className="block p-6">
+                <Link href={`/notes/${folderId}/edit/${note.id}`} className="block p-6 transition-colors duration-300 cursor-pointer hover:opacity-90">
                   <h3 className="text-lg font-semibold mb-2 truncate" style={{ color: "var(--text-primary)" }}>
                     {note.title || "Untitled"}
                   </h3>

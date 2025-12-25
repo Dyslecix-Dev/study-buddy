@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { signUpSchema, type SignUpInput } from "@/lib/validations/auth";
+import Button from "@/components/ui/button";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -151,7 +152,7 @@ export default function SignUpPage() {
             </p>
 
             <div className="mt-6">
-              <Link href="/login" className="font-medium" style={{ color: "var(--primary)" }}>
+              <Link href="/login" className="font-medium transition-colors duration-300 cursor-pointer hover:opacity-80" style={{ color: "var(--primary)" }}>
                 Return to login
               </Link>
             </div>
@@ -174,7 +175,7 @@ export default function SignUpPage() {
           </h2>
           <p className="mt-2 text-center text-sm" style={{ color: "var(--text-secondary)" }}>
             Or{" "}
-            <Link href="/login" className="font-medium" style={{ color: "var(--primary)" }}>
+            <Link href="/login" className="font-medium transition-colors duration-300 cursor-pointer hover:opacity-80" style={{ color: "var(--primary)" }}>
               sign in to your account
             </Link>
           </p>
@@ -348,14 +349,14 @@ export default function SignUpPage() {
           )}
 
           <div>
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: "var(--primary)", color: "#1a1a1a" }}
+              isLoading={loading}
+              variant="primary"
+              fullWidth
             >
-              {loading ? "Creating account..." : "Sign up"}
-            </button>
+              Sign up
+            </Button>
           </div>
         </form>
       </div>

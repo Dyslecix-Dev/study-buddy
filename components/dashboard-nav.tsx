@@ -178,7 +178,12 @@ export default function DashboardNav() {
         } = await supabase.auth.getUser();
 
         if (authUser) {
-          const response = await fetch(`/api/users/${authUser.id}`);
+          const response = await fetch(`/api/users/${authUser.id}`, {
+            next: {
+              tags: [`user-${authUser.id}`],
+              revalidate: 300, // Revalidate every 5 minutes
+            },
+          });
           if (response.ok) {
             const userData = await response.json();
             setUser(userData);

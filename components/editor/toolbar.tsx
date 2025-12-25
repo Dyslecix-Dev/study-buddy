@@ -3,6 +3,7 @@
 import { Editor } from "@tiptap/react";
 import { useState, useEffect, useRef } from "react";
 import { Bold, Italic, Underline as UnderlineIcon, Strikethrough, Code, List, ListOrdered, Quote, Heading1, Heading2, Heading3, Undo, Redo, Image as ImageIcon, Loader2 } from "lucide-react";
+import AlertModal from "@/components/ui/alert-modal";
 
 interface EditorToolbarProps {
   editor: Editor;
@@ -13,6 +14,12 @@ interface EditorToolbarProps {
 export default function EditorToolbar({ editor, onImageUpload, isUploadingImage = false }: EditorToolbarProps) {
   const [, setUpdateTrigger] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [alertModal, setAlertModal] = useState<{ isOpen: boolean; title: string; description: string; variant: "error" | "warning" | "info" }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    variant: "info"
+  });
 
   useEffect(() => {
     const updateToolbar = () => {
@@ -38,13 +45,23 @@ export default function EditorToolbar({ editor, onImageUpload, isUploadingImage 
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      setAlertModal({
+        isOpen: true,
+        title: "Invalid File Type",
+        description: "Please select an image file",
+        variant: "warning"
+      });
       return;
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be less than 5MB');
+      setAlertModal({
+        isOpen: true,
+        title: "File Too Large",
+        description: "Image must be less than 5MB",
+        variant: "warning"
+      });
       return;
     }
 
@@ -161,6 +178,14 @@ export default function EditorToolbar({ editor, onImageUpload, isUploadingImage 
           />
         </>
       )}
+
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        description={alertModal.description}
+        variant={alertModal.variant}
+      />
     </div>
   );
 }

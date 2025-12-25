@@ -2,17 +2,23 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Button from "./button";
 
-interface DeleteConfirmModalProps {
+interface AlertModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
   title: string;
   description: string;
-  confirmText?: string;
-  cancelText?: string;
+  buttonText?: string;
+  variant?: "error" | "warning" | "info";
 }
 
-export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, title, description, confirmText = "Delete", cancelText = "Cancel" }: DeleteConfirmModalProps) {
+export default function AlertModal({
+  isOpen,
+  onClose,
+  title,
+  description,
+  buttonText = "OK",
+  variant = "info"
+}: AlertModalProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -22,9 +28,15 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, title, 
 
   if (!isOpen || !mounted) return null;
 
-  const handleConfirm = () => {
-    onConfirm();
-    onClose();
+  const getButtonVariant = (): "danger" | "warning" | "primary" => {
+    switch (variant) {
+      case "error":
+        return "danger";
+      case "warning":
+        return "warning";
+      default:
+        return "primary";
+    }
   };
 
   const modalContent = (
@@ -36,12 +48,9 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, title, 
         <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
           {description}
         </p>
-        <div className="flex justify-end space-x-3">
-          <Button onClick={onClose} variant="secondary">
-            {cancelText}
-          </Button>
-          <Button onClick={handleConfirm} variant="danger">
-            {confirmText}
+        <div className="flex justify-end">
+          <Button onClick={onClose} variant={getButtonVariant()}>
+            {buttonText}
           </Button>
         </div>
       </div>
@@ -50,4 +59,3 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, title, 
 
   return createPortal(modalContent, document.body);
 }
-

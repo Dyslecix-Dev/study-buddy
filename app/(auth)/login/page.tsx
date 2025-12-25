@@ -8,12 +8,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/lib/supabase/client";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
+import Button from "@/components/ui/button";
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -60,6 +65,28 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setError(null);
+
+    try {
+      const supabase = createClient();
+
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setResetSuccess(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset email");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: "var(--background)" }}>
       <div className="max-w-md w-full space-y-8">
@@ -69,17 +96,97 @@ export default function LoginPage() {
 
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold" style={{ color: "var(--text-primary)" }}>
-            Sign in to your account
+            {showForgotPassword ? "Reset Password" : "Sign in to your account"}
           </h2>
           <p className="mt-2 text-center text-sm" style={{ color: "var(--text-secondary)" }}>
-            Or{" "}
-            <Link href="/signup" className="font-medium" style={{ color: "var(--primary)" }}>
-              create a new account
-            </Link>
+            {!showForgotPassword && (
+              <>
+                Or{" "}
+                <Link href="/signup" className="font-medium transition-colors duration-300 cursor-pointer hover:opacity-80" style={{ color: "var(--primary)" }}>
+                  create a new account
+                </Link>
+              </>
+            )}
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        {showForgotPassword ? (
+          <div className="mt-8">
+            {resetSuccess ? (
+              <div className="rounded-md bg-green-50 p-4">
+                <div className="text-sm text-green-800">
+                  Password reset email sent! Check your inbox for further instructions.
+                </div>
+                <Button
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetSuccess(false);
+                    setResetEmail("");
+                  }}
+                  variant="ghost"
+                  className="mt-4"
+                  size="sm"
+                >
+                  Back to login
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div>
+                  <label htmlFor="reset-email" className="block text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                    Email address
+                  </label>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                    className="mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none sm:text-sm"
+                    style={{
+                      backgroundColor: "var(--surface)",
+                      borderColor: "var(--border)",
+                      color: "var(--text-primary)",
+                    }}
+                    placeholder="you@example.com"
+                  />
+                  <p className="mt-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+                    Enter your email address and we'll send you a link to reset your password.
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="rounded-md bg-red-50 p-4">
+                    <div className="text-sm text-red-800">{error}</div>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  isLoading={resetLoading}
+                  variant="primary"
+                  fullWidth
+                >
+                  Send Reset Link
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setError(null);
+                    setResetEmail("");
+                  }}
+                  variant="ghost"
+                  fullWidth
+                >
+                  Back to login
+                </Button>
+              </form>
+            )}
+          </div>
+        ) : (
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium" style={{ color: "var(--text-primary)" }}>
@@ -138,17 +245,31 @@ export default function LoginPage() {
             </div>
           )}
 
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <Button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                variant="ghost"
+                size="sm"
+              >
+                Forgot your password?
+              </Button>
+            </div>
+          </div>
+
           <div>
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: "var(--primary)", color: "#1a1a1a" }}
+              isLoading={loading}
+              variant="primary"
+              fullWidth
             >
-              {loading ? "Signing in..." : "Sign in"}
-            </button>
+              Sign in
+            </Button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

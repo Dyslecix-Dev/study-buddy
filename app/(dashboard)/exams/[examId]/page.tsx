@@ -297,7 +297,7 @@ export default function ExamDetailPage() {
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6">
-          <Link href="/exams" className="inline-flex items-center gap-2 mb-4 text-sm hover:opacity-70" style={{ color: "var(--text-secondary)" }}>
+          <Link href="/exams" className="inline-flex items-center gap-2 mb-4 text-sm transition-colors duration-300 cursor-pointer hover:opacity-70" style={{ color: "var(--text-secondary)" }}>
             <ArrowLeft size={16} />
             Back to Exams
           </Link>
@@ -317,7 +317,7 @@ export default function ExamDetailPage() {
             </div>
             <div className="flex gap-2">
               {exam.Question.length > 0 && (
-                <Link href={`/exams/${examId}/take`} className="flex items-center gap-2 px-4 py-2 rounded-md transition-colors" style={{ backgroundColor: "#9C27B0", color: "#ffffff" }}>
+                <Link href={`/exams/${examId}/take`} className="flex items-center gap-2 px-4 py-2 rounded-md transition-colors duration-300 cursor-pointer hover:opacity-90" style={{ backgroundColor: "#9C27B0", color: "#ffffff" }}>
                   <Play size={20} />
                   Take Exam
                 </Link>

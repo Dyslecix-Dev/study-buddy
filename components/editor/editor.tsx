@@ -12,6 +12,7 @@ import EditorToolbar from './toolbar'
 import { NoteLink } from '@/lib/tiptap-extensions/note-link'
 import { NoteLinkSuggestion, Note } from './note-link-suggestion'
 import { NoteLinkPreview } from '@/components/notes/note-link-preview'
+import AlertModal from '@/components/ui/alert-modal'
 
 interface EditorProps {
   content: string
@@ -45,6 +46,11 @@ export default function Editor({
   const [previewNoteId, setPreviewNoteId] = useState<string | null>(null)
   const [previewPosition, setPreviewPosition] = useState<{ x: number; y: number } | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [alertModal, setAlertModal] = useState<{ isOpen: boolean; title: string; description: string }>({
+    isOpen: false,
+    title: "",
+    description: ""
+  })
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -84,7 +90,11 @@ export default function Editor({
       return data.url
     } catch (error) {
       console.error('Image upload failed:', error)
-      alert(error instanceof Error ? error.message : 'Failed to upload image')
+      setAlertModal({
+        isOpen: true,
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : 'Failed to upload image'
+      })
       return null
     } finally {
       setIsUploadingImage(false)
@@ -321,6 +331,14 @@ export default function Editor({
           onClose={handlePreviewClose}
         />
       )}
+
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        description={alertModal.description}
+        variant="error"
+      />
     </div>
   )
 }
