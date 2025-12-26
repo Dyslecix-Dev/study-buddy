@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import SearchTrigger from "@/components/search/search-trigger";
 import AvatarDropdown from "@/components/avatar-dropdown";
-import { Menu, X, FileText, CheckSquare, Brain, Timer, BookOpen, Settings, LogOut, Search, Bug } from "lucide-react";
+import { Menu, X, FileText, CheckSquare, Brain, Timer, BookOpen, Settings, LogOut, Search, Bug, Trophy, Calendar, Network, Tag } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTheme } from "@/components/theme-provider";
@@ -57,6 +57,25 @@ function MobileProfileButtons({ user, isLoading, onItemClick }: MobileProfileBut
         Settings
       </button>
 
+      {/* Achievements */}
+      <button
+        onClick={() => {
+          onItemClick();
+          router.push("/achievements");
+        }}
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-base font-medium transition-colors duration-300"
+        style={{ color: "var(--text-secondary)" }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = "var(--text-primary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = "var(--text-secondary)";
+        }}
+      >
+        <Trophy size={20} />
+        Achievements
+      </button>
+
       {/* Theme */}
       <button
         onClick={() => {
@@ -100,32 +119,27 @@ function MobileProfileButtons({ user, isLoading, onItemClick }: MobileProfileBut
           Search
         </div>
         {isLoading ? (
-          <div
-            className="w-10 h-10 rounded-full animate-pulse"
-            style={{ backgroundColor: "var(--surface-secondary)" }}
+          <div className="w-10 h-10 rounded-full animate-pulse" style={{ backgroundColor: "var(--surface-secondary)" }} />
+        ) : user.image ? (
+          <Image
+            src={user.image}
+            alt={user.name || "User avatar"}
+            width={40}
+            height={40}
+            className="rounded-full object-cover"
+            style={{ width: "40px", height: "40px" }}
+            unoptimized={user.image.includes("dicebear.com")}
           />
         ) : (
-          user.image ? (
-            <Image
-              src={user.image}
-              alt={user.name || "User avatar"}
-              width={40}
-              height={40}
-              className="rounded-full object-cover"
-              style={{ width: "40px", height: "40px" }}
-              unoptimized={user.image.includes("dicebear.com")}
-            />
-          ) : (
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold"
-              style={{
-                backgroundColor: "var(--primary)",
-                color: "#1a1a1a",
-              }}
-            >
-              {initials}
-            </div>
-          )
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold"
+            style={{
+              backgroundColor: "var(--primary)",
+              color: "#1a1a1a",
+            }}
+          >
+            {initials}
+          </div>
         )}
       </div>
 
@@ -148,12 +162,7 @@ function MobileProfileButtons({ user, isLoading, onItemClick }: MobileProfileBut
         Logout
       </button>
 
-      <ReportBugModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        userEmail={user.email}
-        userName={user.name}
-      />
+      <ReportBugModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} userEmail={user.email} userName={user.name} />
     </>
   );
 }
@@ -202,6 +211,7 @@ export default function DashboardNav() {
     { name: "Tasks", href: "/tasks", icon: CheckSquare },
     { name: "Flashcards", href: "/flashcards", icon: Brain },
     { name: "Exams", href: "/exams", icon: BookOpen },
+    { name: "Tags", href: "/tags", icon: Tag },
     { name: "Focus", href: "/focus", icon: Timer },
   ];
 
@@ -251,14 +261,7 @@ export default function DashboardNav() {
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-4">
               <SearchTrigger />
-              {isLoading ? (
-                <div
-                  className="w-10 h-10 rounded-full animate-pulse"
-                  style={{ backgroundColor: "var(--surface-secondary)" }}
-                />
-              ) : (
-                user && <AvatarDropdown user={user} />
-              )}
+              {isLoading ? <div className="w-10 h-10 rounded-full animate-pulse" style={{ backgroundColor: "var(--surface-secondary)" }} /> : user && <AvatarDropdown user={user} />}
             </div>
 
             {/* Mobile menu button */}

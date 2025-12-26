@@ -23,8 +23,18 @@ export async function POST(request: NextRequest) {
     // Award welcome achievement
     try {
       await checkAndUnlockAchievement(user.id, 'welcome');
+
+      // Check if avatar was uploaded (not a default avatar)
+      if (image) {
+        await checkAndUnlockAchievement(user.id, 'avatar-upload');
+      }
+
+      // Check if profile is complete (has name and avatar)
+      if (name && image) {
+        await checkAndUnlockAchievement(user.id, 'complete-profile');
+      }
     } catch (gamificationError) {
-      console.error('Failed to award welcome achievement:', gamificationError);
+      console.error('Failed to award achievements:', gamificationError);
       // Don't fail user creation if gamification fails
     }
 

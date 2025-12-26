@@ -348,6 +348,7 @@ model UserAchievement {
   userId        String
   achievementId String
   unlockedAt    DateTime    @default(now())
+  seen          Boolean     @default(false) // Track if user has seen the unlock modal
   User          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   Achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
 
@@ -355,4 +356,5 @@ model UserAchievement {
   @@index([userId])
   @@index([achievementId])
   @@index([userId, unlockedAt])
+  @@index([userId, seen])
 }

@@ -4,6 +4,8 @@ import { Toaster } from "sonner";
 import CommandPalette from "@/components/search/command-palette";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TimerProvider } from "@/contexts/timer-context";
+import { GamificationProvider } from "@/contexts/gamification-context";
+import { UnseenAchievementsChecker } from "@/components/gamification/unseen-achievements-checker";
 import FloatingTimer from "@/components/timer/floating-timer";
 import "./globals.css";
 
@@ -32,12 +34,15 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${philosopher.variable} ${mulish.variable} antialiased`}>
         <ThemeProvider>
-          <TimerProvider>
-            {children}
-            <CommandPalette />
-            <FloatingTimer />
-            <Toaster position="top-right" />
-          </TimerProvider>
+          <GamificationProvider>
+            <TimerProvider>
+              {children}
+              <UnseenAchievementsChecker />
+              <CommandPalette />
+              <FloatingTimer />
+              <Toaster position="top-right" />
+            </TimerProvider>
+          </GamificationProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { revalidateUserCache } from "@/lib/cache-utils";
+import { checkAndUnlockAchievement } from "@/lib/gamification-service";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"];
@@ -66,13 +67,28 @@ export async function POST(request: NextRequest) {
     });
 
     // Update user profile with new avatar URL
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: { image: blob.url },
+      select: { name: true, image: true },
     });
 
     // Revalidate the user cache so the navbar shows the new avatar
     revalidateUserCache(user.id);
+
+    // Check for profile achievements
+    try {
+      // Award "Face of Knowledge" achievement for uploading custom avatar
+      await checkAndUnlockAchievement(user.id, 'avatar-upload');
+
+      // Award "Identity Complete" if user has both name and avatar
+      if (updatedUser.name && updatedUser.image) {
+        await checkAndUnlockAchievement(user.id, 'complete-profile');
+      }
+    } catch (achievementError) {
+      console.error('Failed to check achievements:', achievementError);
+      // Don't fail the upload if achievement check fails
+    }
 
     return NextResponse.json({
       url: blob.url,

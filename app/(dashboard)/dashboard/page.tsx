@@ -17,17 +17,27 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Check if user has any notes
+  // Get or create user progress to track historical creation
+  let userProgress = await prisma.userProgress.findUnique({
+    where: { userId: user.id },
+  });
+
+  // If no user progress exists, create one
+  if (!userProgress) {
+    userProgress = await prisma.userProgress.create({
+      data: { userId: user.id },
+    });
+  }
+
+  // Check if user has any current items for activity detection
   const noteCount = await prisma.note.count({
     where: { userId: user.id },
   });
 
-  // Check if user has any tasks
   const taskCount = await prisma.task.count({
     where: { userId: user.id },
   });
 
-  // Check if user has any flashcards
   const flashcardCount = await prisma.flashcard.count({
     where: {
       Deck: {
@@ -36,12 +46,10 @@ export default async function DashboardPage() {
     },
   });
 
-  // Check if user has any focus sessions
   const focusSessionCount = await prisma.focusSession.count({
     where: { userId: user.id },
   });
 
-  // Check if user has any questions
   const questionCount = await prisma.question.count({
     where: {
       Exam: {
@@ -72,66 +80,8 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Link href="/notes" className="shadow rounded-lg p-6 hover:shadow-lg transition-all duration-300" style={{ backgroundColor: "var(--surface)" }}>
-            <div className="flex items-center mb-4">
-              <div className="p-3 rounded-lg" style={{ backgroundColor: "#7ADAA533" }}>
-                <FileText style={{ color: "var(--primary)" }} size={24} />
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
-              Notes
-            </h3>
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              Create and organize your study notes with rich text formatting
-            </p>
-          </Link>
-
-          <Link href="/tasks" className="shadow rounded-lg p-6 hover:shadow-lg transition-all duration-300" style={{ backgroundColor: "var(--surface)" }}>
-            <div className="flex items-center mb-4">
-              <div className="p-3 rounded-lg" style={{ backgroundColor: "#239BA733" }}>
-                <CheckSquare style={{ color: "var(--secondary)" }} size={24} />
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
-              Tasks
-            </h3>
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              Manage your assignments and deadlines with priorities
-            </p>
-          </Link>
-
-          <Link href="/flashcards" className="shadow rounded-lg p-6 hover:shadow-lg transition-all duration-300" style={{ backgroundColor: "var(--surface)" }}>
-            <div className="flex items-center mb-4">
-              <div className="p-3 rounded-lg" style={{ backgroundColor: "#E1AA3633" }}>
-                <Brain style={{ color: "var(--quaternary)" }} size={24} />
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
-              Flashcards
-            </h3>
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              Study with flashcard decks and track your progress
-            </p>
-          </Link>
-
-          <Link href="/exams" className="shadow rounded-lg p-6 hover:shadow-lg transition-all duration-300" style={{ backgroundColor: "var(--surface)" }}>
-            <div className="flex items-center mb-4">
-              <div className="p-3 rounded-lg" style={{ backgroundColor: "#9C27B033" }}>
-                <BookOpen style={{ color: "#9C27B0" }} size={24} />
-              </div>
-            </div>
-            <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
-              Exams
-            </h3>
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              Create and take practice exams to test your knowledge
-            </p>
-          </Link>
-        </div>
-
         <div className="space-y-4">
-          {noteCount === 0 && (
+          {userProgress.totalNotesCreated === 0 && (
             <div className="border rounded-lg p-6" style={{ backgroundColor: "var(--surface-secondary)", borderColor: "var(--border)" }}>
               <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
                 📝 Start Taking Notes
@@ -145,7 +95,7 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {taskCount === 0 && (
+          {userProgress.totalTasksCreated === 0 && (
             <div className="border rounded-lg p-6" style={{ backgroundColor: "var(--surface-secondary)", borderColor: "var(--border)" }}>
               <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
                 ✅ Stay Organized
@@ -159,7 +109,7 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {flashcardCount === 0 && (
+          {userProgress.totalDecksCreated === 0 && (
             <div className="border rounded-lg p-6" style={{ backgroundColor: "var(--surface-secondary)", borderColor: "var(--border)" }}>
               <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
                 🎯 Master Your Studies
@@ -173,7 +123,7 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {questionCount === 0 && (
+          {userProgress.totalQuestionsCreated === 0 && (
             <div className="border rounded-lg p-6" style={{ backgroundColor: "var(--surface-secondary)", borderColor: "var(--border)" }}>
               <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
                 📝 Test Your Knowledge
@@ -181,8 +131,36 @@ export default async function DashboardPage() {
               <p className="mb-3" style={{ color: "var(--text-secondary)" }}>
                 Create practice exams with multiple choice, select all, and true/false questions. Start building your first exam to test yourself.
               </p>
-              <Link href="/exams" className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all" style={{ backgroundColor: "#9C27B0", color: "#ffffff" }}>
+              <Link href="/exams" className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all" style={{ backgroundColor: "var(--primary)", color: "#1a1a1a" }}>
                 Create Your First Exam Question
+              </Link>
+            </div>
+          )}
+
+          {userProgress.totalTagsUsed === 0 && (
+            <div className="border rounded-lg p-6" style={{ backgroundColor: "var(--surface-secondary)", borderColor: "var(--border)" }}>
+              <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+                🏷️ Organize with Tags
+              </h2>
+              <p className="mb-3" style={{ color: "var(--text-secondary)" }}>
+                Tags help you categorize and find your notes, tasks, flashcards, and exams. Create your first tag to start organizing your content.
+              </p>
+              <Link href="/tags" className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all" style={{ backgroundColor: "var(--secondary)", color: "#ffffff" }}>
+                Create Your First Tag
+              </Link>
+            </div>
+          )}
+
+          {focusSessionCount === 0 && (
+            <div className="border rounded-lg p-6" style={{ backgroundColor: "var(--surface-secondary)", borderColor: "var(--border)" }}>
+              <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+                ⏱️ Start a Study Session
+              </h2>
+              <p className="mb-3" style={{ color: "var(--text-secondary)" }}>
+                Use the Pomodoro timer to maintain focus and track your study time. Start your first focus session to build productive habits.
+              </p>
+              <Link href="/focus" className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all" style={{ backgroundColor: "var(--quaternary)", color: "#1a1a1a" }}>
+                Create Your First Study Session
               </Link>
             </div>
           )}

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useTheme } from "@/components/theme-provider";
-import { User, Settings, LogOut, Bug } from "lucide-react";
+import { User, Settings, LogOut, Bug, Trophy } from "lucide-react";
 import { getUserInitials } from "@/lib/avatar-utils";
 import ReportBugModal from "@/components/ui/report-bug-modal";
 
@@ -143,6 +143,24 @@ export default function AvatarDropdown({ user }: AvatarDropdownProps) {
             >
               <Settings size={18} />
               Settings
+            </button>
+
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                router.push("/achievements");
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors duration-200 cursor-pointer"
+              style={{ color: "var(--text-primary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--surface-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+            >
+              <Trophy size={18} />
+              Achievements
             </button>
 
             <button

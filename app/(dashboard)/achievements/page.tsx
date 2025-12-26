@@ -1,14 +1,15 @@
-import { Suspense } from 'react';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
-import { prisma } from '@/lib/prisma';
-import { ACHIEVEMENTS, getAchievementsByCategory, AchievementCategory } from '@/lib/gamification';
-import { AchievementsPageClient } from './achievements-client';
-import { LoadingSpinner } from '@/components/loading-spinner';
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { ACHIEVEMENTS, getAchievementsByCategory, AchievementCategory } from "@/lib/gamification";
+import { AchievementsPageClient } from "./achievements-client";
+import DashboardNav from "@/components/dashboard-nav";
+import { LoadingSpinner } from "@/components/loading-spinner";
 
 export const metadata = {
-  title: 'Achievements | Study Buddy',
-  description: 'View your earned achievements and track your progress',
+  title: "Achievements | Study Buddy",
+  description: "View your earned achievements and track your progress",
 };
 
 async function getAchievementsData(userId: string) {
@@ -23,7 +24,7 @@ async function getAchievementsData(userId: string) {
     include: {
       Achievement: true,
     },
-    orderBy: { unlockedAt: 'desc' },
+    orderBy: { unlockedAt: "desc" },
   });
 
   // Get counts for progress calculation
@@ -60,7 +61,7 @@ async function getAchievementsData(userId: string) {
     }),
     prisma.noteLink.count({ where: { Note_NoteLink_fromNoteIdToNote: { userId } } }),
     prisma.tag.count({ where: { userId } }),
-    prisma.activityLog.count({ where: { userId, type: 'bug_report' } }),
+    prisma.activityLog.count({ where: { userId, type: "bug_report" } }),
   ]);
 
   const progressData = {
@@ -97,37 +98,35 @@ export default async function AchievementsPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirect("/login");
   }
 
   const { userProgress, userAchievements, progressData } = await getAchievementsData(user.id);
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Achievements</h1>
-          <p className="text-muted-foreground">
-            Track your progress and unlock badges
-          </p>
+    <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+      <DashboardNav />
+      <div className="container mx-auto py-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Achievements</h1>
+            <p className="text-muted-foreground">Track your progress and unlock badges</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Unlocked</p>
+            <p className="text-2xl font-bold">
+              {userAchievements.length} / {ACHIEVEMENTS.length}
+            </p>
+          </div>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-muted-foreground">Unlocked</p>
-          <p className="text-2xl font-bold">
-            {userAchievements.length} / {ACHIEVEMENTS.length}
-          </p>
-        </div>
-      </div>
 
-      {/* Client Component with Achievements */}
-      <Suspense fallback={<LoadingSpinner />}>
-        <AchievementsPageClient
-          userProgress={userProgress}
-          userAchievements={userAchievements}
-          progressData={progressData}
-        />
-      </Suspense>
+        {/* Client Component with Achievements */}
+        <Suspense fallback={<LoadingSpinner />}>
+          <AchievementsPageClient userProgress={userProgress} userAchievements={userAchievements} progressData={progressData} />
+        </Suspense>
+      </div>
     </div>
   );
 }
+
