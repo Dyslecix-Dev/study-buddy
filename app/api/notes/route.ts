@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { incrementDailyProgress } from "@/lib/progress-tracker";
 import { logNoteCreated } from "@/lib/activity-logger";
+import { awardXP } from "@/lib/gamification-service";
+import { XP_VALUES } from "@/lib/gamification";
+import { checkCountBasedAchievements, checkCompoundAchievements, checkFirstDay } from "@/lib/achievement-helpers";
 
 // GET - List all notes for the authenticated user
 export async function GET(request: NextRequest) {
@@ -98,6 +101,33 @@ export async function POST(request: NextRequest) {
 
     // Log activity
     await logNoteCreated(user.id, note.id, note.title);
+
+    // Gamification: Award XP and track
+    try {
+      await awardXP(user.id, XP_VALUES.CREATE_NOTE);
+
+      // Increment cumulative counter
+      await prisma.userProgress.upsert({
+        where: { userId: user.id },
+        create: {
+          userId: user.id,
+          totalNotesCreated: 1,
+          totalLinksCreated: noteLinks?.length || 0,
+        },
+        update: {
+          totalNotesCreated: { increment: 1 },
+          totalLinksCreated: { increment: noteLinks?.length || 0 },
+        }
+      });
+
+      // Check for achievements
+      await checkCountBasedAchievements(user.id);
+      await checkCompoundAchievements(user.id);
+      await checkFirstDay(user.id);
+    } catch (gamificationError) {
+      console.error('Gamification error:', gamificationError);
+      // Don't fail note creation if gamification fails
+    }
 
     return NextResponse.json({ note }, { status: 201 });
   } catch (error: any) {

@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { incrementDailyProgress } from "@/lib/progress-tracker";
 import { logNoteUpdated, logNoteDeleted } from "@/lib/activity-logger";
 import { deleteNoteImages } from "@/lib/blob-cleanup";
+import { awardXP } from "@/lib/gamification-service";
+import { XP_VALUES } from "@/lib/gamification";
 
 // GET - Get a single note
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -201,6 +203,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         },
       },
     });
+
+    // Gamification: Award XP for updating note
+    try {
+      await awardXP(user.id, XP_VALUES.UPDATE_NOTE);
+    } catch (gamificationError) {
+      console.error("Gamification error:", gamificationError);
+    }
 
     // Clean up unused tags
     for (const tagId of removedTagIds) {

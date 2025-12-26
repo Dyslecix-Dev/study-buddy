@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { logExamCompleted } from "@/lib/activity-logger";
 import { incrementDailyProgress } from "@/lib/progress-tracker";
+import { awardXP } from "@/lib/gamification-service";
+import { XP_VALUES } from "@/lib/gamification";
+import { checkActionBasedAchievements, checkDailyChallenges, checkPerfectScore, updateDailyProgress } from "@/lib/achievement-helpers";
 
 type Params = {
   params: Promise<{
@@ -158,6 +161,29 @@ export async function POST(request: NextRequest, { params }: Params) {
         },
       },
     });
+
+    // Gamification: Award XP
+    try {
+      await awardXP(user.id, XP_VALUES.COMPLETE_EXAM);
+
+      // Bonus XP for perfect score
+      if (attempt.score === 100) {
+        await awardXP(user.id, XP_VALUES.PERFECT_EXAM);
+      }
+
+      // Update daily progress
+      await updateDailyProgress(user.id, {
+        examsCompleted: 1,
+        questionsAnswered: attempt.totalQuestions,
+      });
+
+      // Check achievements
+      await checkActionBasedAchievements(user.id);
+      await checkDailyChallenges(user.id);
+      await checkPerfectScore(user.id, attempt.id);
+    } catch (gamificationError) {
+      console.error("Gamification error:", gamificationError);
+    }
 
     // Log activity
     await logExamCompleted(user.id, exam.id, exam.name, score);

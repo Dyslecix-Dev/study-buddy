@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateDefaultAvatar } from "@/lib/avatar-utils";
+import { checkAndUnlockAchievement } from "@/lib/gamification-service";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +19,14 @@ export async function POST(request: NextRequest) {
         image: avatarUrl,
       },
     });
+
+    // Award welcome achievement
+    try {
+      await checkAndUnlockAchievement(user.id, 'welcome');
+    } catch (gamificationError) {
+      console.error('Failed to award welcome achievement:', gamificationError);
+      // Don't fail user creation if gamification fails
+    }
 
     return NextResponse.json({ user }, { status: 201 });
   } catch (error: any) {

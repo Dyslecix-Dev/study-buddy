@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { logFolderCreated } from "@/lib/activity-logger";
+import { awardXP } from "@/lib/gamification-service";
+import { XP_VALUES } from "@/lib/gamification";
+import { checkCountBasedAchievements } from "@/lib/achievement-helpers";
 
 // GET /api/folders - Get all folders for the current user
 export async function GET(request: NextRequest) {
@@ -66,6 +69,21 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Gamification: Award XP and track
+    try {
+      await awardXP(user.id, XP_VALUES.CREATE_FOLDER);
+
+      await prisma.userProgress.upsert({
+        where: { userId: user.id },
+        create: { userId: user.id, totalFoldersCreated: 1 },
+        update: { totalFoldersCreated: { increment: 1 } },
+      });
+
+      await checkCountBasedAchievements(user.id);
+    } catch (gamificationError) {
+      console.error("Gamification error:", gamificationError);
+    }
 
     // Log activity
     await logFolderCreated(user.id, folder.id, folder.name);

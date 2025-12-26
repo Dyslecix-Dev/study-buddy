@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { incrementDailyProgress, decrementDailyProgress } from "@/lib/progress-tracker";
 import { logTaskCompleted, logTaskUncompleted, logTaskDeleted } from "@/lib/activity-logger";
+import { awardXP } from "@/lib/gamification-service";
+import { XP_VALUES } from "@/lib/gamification";
+import { checkActionBasedAchievements, checkDailyChallenges, checkCompoundAchievements, updateDailyProgress } from "@/lib/achievement-helpers";
 
 type Params = {
   params: Promise<{
@@ -99,6 +102,29 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         // Task is being completed
         await incrementDailyProgress(user.id, "taskCompleted");
         await logTaskCompleted(user.id, id, existingTask.title);
+
+        // Gamification: Award XP when completing task
+        try {
+          await awardXP(user.id, XP_VALUES.COMPLETE_TASK);
+
+          // Update daily progress
+          await updateDailyProgress(user.id, { tasksCompleted: 1 });
+
+          // Check for early bird achievement
+          if (existingTask.dueDate && new Date() < new Date(existingTask.dueDate)) {
+            await prisma.userProgress.update({
+              where: { userId: user.id },
+              data: { earlyTaskCompletions: { increment: 1 } },
+            });
+          }
+
+          // Check achievements
+          await checkActionBasedAchievements(user.id);
+          await checkDailyChallenges(user.id);
+          await checkCompoundAchievements(user.id);
+        } catch (gamificationError) {
+          console.error("Gamification error:", gamificationError);
+        }
       } else {
         // Task is being uncompleted - decrement the count
         await decrementDailyProgress(user.id, "taskCompleted", existingTask.updatedAt);

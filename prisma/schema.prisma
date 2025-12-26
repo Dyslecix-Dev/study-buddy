@@ -168,19 +168,20 @@ model FocusSession {
 }
 
 model DailyProgress {
-  id               String   @id @default(uuid())
-  userId           String
-  date             DateTime
-  tasksCompleted   Int      @default(0)
-  cardsReviewed    Int      @default(0)
-  notesCreated     Int      @default(0)
-  notesUpdated     Int      @default(0)
-  focusMinutes     Int      @default(0)
-  examsCompleted   Int      @default(0)
-  questionsCreated Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  User             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                      String   @id @default(uuid())
+  userId                  String
+  date                    DateTime
+  tasksCompleted          Int      @default(0)
+  cardsReviewed           Int      @default(0)
+  notesCreated            Int      @default(0)
+  notesUpdated            Int      @default(0)
+  focusMinutes            Int      @default(0)
+  examsCompleted          Int      @default(0)
+  questionsCreated        Int      @default(0)
+  questionsAnswered       Int      @default(0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  User                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -266,24 +267,92 @@ model QuestionResult {
 }
 
 model User {
-  id             String          @id
-  email          String          @unique
-  name           String?
-  image          String?
-  emailVerified  DateTime?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  ActivityLog    ActivityLog[]
-  DailyProgress  DailyProgress[]
-  Deck           Deck[]
-  Exam           Exam[]
-  ExamAttempt    ExamAttempt[]
-  Folder         Folder[]
-  FocusSession   FocusSession[]
-  Note           Note[]
-  StudySession   StudySession[]
-  Tag            Tag[]
-  Task           Task[]
+  id               String             @id
+  email            String             @unique
+  name             String?
+  image            String?
+  emailVerified    DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  ActivityLog      ActivityLog[]
+  DailyProgress    DailyProgress[]
+  Deck             Deck[]
+  Exam             Exam[]
+  ExamAttempt      ExamAttempt[]
+  Folder           Folder[]
+  FocusSession     FocusSession[]
+  Note             Note[]
+  StudySession     StudySession[]
+  Tag              Tag[]
+  Task             Task[]
+  UserProgress     UserProgress?
+  UserAchievement  UserAchievement[]
 
   @@index([email])
+}
+
+model UserProgress {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  totalXP         Int      @default(0)
+  level           Int      @default(1)
+  currentStreak   Int      @default(0)
+  longestStreak   Int      @default(0)
+  lastActiveDate  DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Cumulative counters (never decrease, even when items are deleted)
+  totalNotesCreated      Int @default(0)
+  totalFoldersCreated    Int @default(0)
+  totalTagsUsed          Int @default(0)
+  totalTasksCreated      Int @default(0)
+  totalDecksCreated      Int @default(0)
+  totalExamsCreated      Int @default(0)
+  totalQuestionsCreated  Int @default(0)
+  totalLinksCreated      Int @default(0)
+
+  // Flashcard review streak tracking
+  currentReviewStreak    Int @default(0)
+  longestReviewStreak    Int @default(0)
+
+  // Task tracking
+  earlyTaskCompletions   Int @default(0)
+
+  User            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([totalXP])
+  @@index([level])
+}
+
+model Achievement {
+  id              String            @id @default(uuid())
+  key             String            @unique // e.g., "first-note", "study-streak-7"
+  name            String            // Display name
+  description     String            // What the achievement is for
+  icon            String            // Emoji or icon identifier
+  xpReward        Int               @default(0)
+  category        String            // e.g., "notes", "tasks", "study", "streak"
+  requirement     Int?              // Numeric requirement (e.g., 7 for 7-day streak)
+  tier            String            @default("bronze") // bronze, silver, gold, platinum
+  createdAt       DateTime          @default(now())
+  UserAchievement UserAchievement[]
+
+  @@index([category])
+  @@index([tier])
+}
+
+model UserAchievement {
+  id            String      @id @default(uuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+  User          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
+  @@index([userId, unlockedAt])
 }

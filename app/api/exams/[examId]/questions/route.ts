@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { logQuestionCreated } from "@/lib/activity-logger";
 import { incrementDailyProgress } from "@/lib/progress-tracker";
+import { checkCountBasedAchievements, checkVarietyExpert } from "@/lib/achievement-helpers";
 
 type Params = {
   params: Promise<{
@@ -114,6 +115,19 @@ export async function POST(request: NextRequest, { params }: Params) {
         Tag: true,
       },
     });
+
+    // Gamification: Track questions and check variety expert
+    try {
+      await prisma.userProgress.update({
+        where: { userId: user.id },
+        data: { totalQuestionsCreated: { increment: 1 } },
+      });
+
+      await checkCountBasedAchievements(user.id);
+      await checkVarietyExpert(user.id, examId);
+    } catch (gamificationError) {
+      console.error("Gamification error:", gamificationError);
+    }
 
     // Log activity
     await logQuestionCreated(user.id, newQuestion.id, exam.name);

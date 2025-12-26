@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma'
 import { calculateNextReview, mapRatingToQuality } from '@/lib/spaced-repetition'
 import { incrementDailyProgress } from '@/lib/progress-tracker'
 import { logFlashcardReviewed } from '@/lib/activity-logger'
+import { awardXP } from '@/lib/gamification-service'
+import { XP_VALUES } from '@/lib/gamification'
+import { checkActionBasedAchievements, checkDailyChallenges, checkCountBasedAchievements, updateDailyProgress } from '@/lib/achievement-helpers'
 
 type Params = {
   params: Promise<{
@@ -93,6 +96,40 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     // Track progress - card has been reviewed
     await incrementDailyProgress(user.id, 'cardReviewed')
+
+    // Gamification: Award XP and track streak
+    try {
+      const isCorrect = quality >= 3 // quality from spaced repetition
+      const xpAmount = isCorrect ? XP_VALUES.REVIEW_FLASHCARD_CORRECT : XP_VALUES.REVIEW_FLASHCARD
+
+      await awardXP(user.id, xpAmount)
+
+      // Update daily progress
+      await updateDailyProgress(user.id, { cardsReviewed: 1 })
+
+      // Track review streak for perfect-recall achievement
+      if (isCorrect) {
+        await prisma.userProgress.update({
+          where: { userId: user.id },
+          data: {
+            currentReviewStreak: { increment: 1 },
+            longestReviewStreak: { increment: 1 },
+          },
+        })
+      } else {
+        await prisma.userProgress.update({
+          where: { userId: user.id },
+          data: { currentReviewStreak: 0 },
+        })
+      }
+
+      // Check achievements
+      await checkActionBasedAchievements(user.id)
+      await checkDailyChallenges(user.id)
+      await checkCountBasedAchievements(user.id)
+    } catch (gamificationError) {
+      console.error('Gamification error:', gamificationError)
+    }
 
     // Log activity
     await logFlashcardReviewed(user.id, flashcardId, deck.name)

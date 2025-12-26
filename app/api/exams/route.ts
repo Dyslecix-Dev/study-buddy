@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { logExamCreated } from "@/lib/activity-logger";
+import { awardXP } from "@/lib/gamification-service";
+import { XP_VALUES } from "@/lib/gamification";
+import { checkCountBasedAchievements, checkCompoundAchievements } from "@/lib/achievement-helpers";
 
 // GET /api/exams - Get all exams for the current user
 export async function GET(request: NextRequest) {
@@ -64,6 +67,22 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Gamification: Award XP and track
+    try {
+      await awardXP(user.id, XP_VALUES.CREATE_EXAM);
+
+      await prisma.userProgress.upsert({
+        where: { userId: user.id },
+        create: { userId: user.id, totalExamsCreated: 1 },
+        update: { totalExamsCreated: { increment: 1 } },
+      });
+
+      await checkCountBasedAchievements(user.id);
+      await checkCompoundAchievements(user.id);
+    } catch (gamificationError) {
+      console.error("Gamification error:", gamificationError);
+    }
 
     // Log activity
     await logExamCreated(user.id, exam.id, exam.name);

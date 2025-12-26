@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { logDeckCreated } from "@/lib/activity-logger";
+import { awardXP } from "@/lib/gamification-service";
+import { XP_VALUES } from "@/lib/gamification";
+import { checkCountBasedAchievements, checkCompoundAchievements } from "@/lib/achievement-helpers";
 
 // GET /api/decks - Get all decks for the current user
 export async function GET(request: NextRequest) {
@@ -64,6 +67,22 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Gamification: Award XP and track
+    try {
+      await awardXP(user.id, XP_VALUES.CREATE_DECK);
+
+      await prisma.userProgress.upsert({
+        where: { userId: user.id },
+        create: { userId: user.id, totalDecksCreated: 1 },
+        update: { totalDecksCreated: { increment: 1 } },
+      });
+
+      await checkCountBasedAchievements(user.id);
+      await checkCompoundAchievements(user.id);
+    } catch (gamificationError) {
+      console.error("Gamification error:", gamificationError);
+    }
 
     // Log activity
     await logDeckCreated(user.id, deck.id, deck.name);

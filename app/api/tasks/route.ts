@@ -1,82 +1,85 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
-import { logTaskCreated } from '@/lib/activity-logger'
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { logTaskCreated } from "@/lib/activity-logger";
+import { awardXP } from "@/lib/gamification-service";
+import { XP_VALUES } from "@/lib/gamification";
+import { checkCountBasedAchievements, checkCompoundAchievements, checkFirstDay } from "@/lib/achievement-helpers";
 
 // GET /api/tasks - Get all tasks for the current user
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
-    const priority = searchParams.get('priority')
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status");
+    const priority = searchParams.get("priority");
 
-    const where: any = { userId: user.id }
+    const where: any = { userId: user.id };
 
-    if (status === 'completed') {
-      where.completed = true
-    } else if (status === 'active') {
-      where.completed = false
+    if (status === "completed") {
+      where.completed = true;
+    } else if (status === "active") {
+      where.completed = false;
     }
 
     if (priority) {
-      where.priority = parseInt(priority)
+      where.priority = parseInt(priority);
     }
 
     const tasks = await prisma.task.findMany({
       where,
-      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [{ order: "asc" }, { createdAt: "desc" }],
       include: {
         Tag: true,
       },
-    })
+    });
 
-    return NextResponse.json(tasks)
+    return NextResponse.json(tasks);
   } catch (error) {
-    console.error('Error fetching tasks:', error)
-    return NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 })
+    console.error("Error fetching tasks:", error);
+    return NextResponse.json({ error: "Failed to fetch tasks" }, { status: 500 });
   }
 }
 
 // POST /api/tasks - Create a new task
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { title, description, startTime, endTime, priority, tagIds } = body
+    const body = await request.json();
+    const { title, description, startTime, endTime, priority, tagIds } = body;
 
     if (!title) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+      return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
     // Get the highest order value to append the new task at the end
     const lastTask = await prisma.task.findFirst({
       where: { userId: user.id },
-      orderBy: { order: 'desc' },
-    })
+      orderBy: { order: "desc" },
+    });
 
     // Compute dueDate from endTime or startTime
-    let dueDate = null
+    let dueDate = null;
     if (endTime) {
-      dueDate = new Date(endTime)
+      dueDate = new Date(endTime);
     } else if (startTime) {
-      dueDate = new Date(startTime)
+      dueDate = new Date(startTime);
     }
 
     const task = await prisma.task.create({
@@ -89,21 +92,41 @@ export async function POST(request: NextRequest) {
         priority: priority !== undefined ? priority : 0,
         order: lastTask ? lastTask.order + 1 : 0,
         userId: user.id,
-        Tag: tagIds && tagIds.length > 0 ? {
-          connect: tagIds.map((id: string) => ({ id })),
-        } : undefined,
+        Tag:
+          tagIds && tagIds.length > 0
+            ? {
+                connect: tagIds.map((id: string) => ({ id })),
+              }
+            : undefined,
       },
       include: {
         Tag: true,
       },
-    })
+    });
+
+    // Gamification: Award XP and track
+    try {
+      await awardXP(user.id, XP_VALUES.CREATE_TASK);
+
+      await prisma.userProgress.upsert({
+        where: { userId: user.id },
+        create: { userId: user.id, totalTasksCreated: 1 },
+        update: { totalTasksCreated: { increment: 1 } },
+      });
+
+      await checkCountBasedAchievements(user.id);
+      await checkFirstDay(user.id);
+    } catch (gamificationError) {
+      console.error("Gamification error:", gamificationError);
+    }
 
     // Log activity
-    await logTaskCreated(user.id, task.id, task.title)
+    await logTaskCreated(user.id, task.id, task.title);
 
-    return NextResponse.json(task, { status: 201 })
+    return NextResponse.json(task, { status: 201 });
   } catch (error) {
-    console.error('Error creating task:', error)
-    return NextResponse.json({ error: 'Failed to create task' }, { status: 500 })
+    console.error("Error creating task:", error);
+    return NextResponse.json({ error: "Failed to create task" }, { status: 500 });
   }
 }
+
