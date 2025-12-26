@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Folder as FolderIcon, Edit2, Trash2, FileText } from "lucide-react";
+import { Folder as FolderIcon, Edit2, Trash2, FileText, Share2 } from "lucide-react";
 
 interface Folder {
   id: string;
@@ -17,6 +17,7 @@ interface FolderListProps {
   folders: Folder[];
   onEdit: (folder: Folder) => void;
   onDelete: (id: string) => void;
+  onShare?: (folder: Folder) => void;
 }
 
 const colorClasses: { [key: string]: string } = {
@@ -29,7 +30,7 @@ const colorClasses: { [key: string]: string } = {
   default: "bg-gray-100 text-gray-700",
 };
 
-export default function FolderList({ folders, onEdit, onDelete }: FolderListProps) {
+export default function FolderList({ folders, onEdit, onDelete, onShare }: FolderListProps) {
   if (folders.length === 0) {
     return (
       <div className="text-center py-12 rounded-lg shadow" style={{ backgroundColor: "var(--surface-secondary)", borderColor: "var(--border)" }}>
@@ -75,6 +76,23 @@ export default function FolderList({ folders, onEdit, onDelete }: FolderListProp
                   <FileText size={16} className="mr-1" />
                   View Notes
                 </Link>
+                {onShare && (
+                  <button
+                    onClick={() => onShare(folder)}
+                    className="inline-flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300 cursor-pointer"
+                    style={{
+                      borderColor: "var(--border)",
+                      color: "var(--primary)",
+                      backgroundColor: "var(--surface)",
+                      borderWidth: "1px",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--surface-hover)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--surface)")}
+                    title="Share folder"
+                  >
+                    <Share2 size={16} />
+                  </button>
+                )}
                 <button
                   onClick={() => onEdit(folder)}
                   className="inline-flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300 cursor-pointer"

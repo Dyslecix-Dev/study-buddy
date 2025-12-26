@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import DashboardNav from "@/components/dashboard-nav";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Plus, BookOpen, Edit, Trash2 } from "lucide-react";
+import { Plus, BookOpen, Edit, Trash2, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import ShareModal from "@/components/share/share-modal";
 
 interface Exam {
   id: string;
@@ -32,6 +33,12 @@ export default function ExamsPage() {
     description: "",
     color: "",
   });
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [examToShare, setExamToShare] = useState<{
+    id: string;
+    name: string;
+    _count: { Question: number };
+  } | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -129,6 +136,11 @@ export default function ExamsPage() {
       console.error("Error deleting exam:", error);
       toast.error("Failed to delete exam");
     }
+  };
+
+  const handleShare = (exam: Exam) => {
+    setExamToShare(exam);
+    setShareModalOpen(true);
   };
 
   if (loading) {
@@ -243,6 +255,9 @@ export default function ExamsPage() {
                     </p>
                   </Link>
                   <div className="flex gap-2">
+                    <button onClick={() => handleShare(exam)} className="p-2 rounded hover:bg-opacity-10" style={{ color: "var(--text-secondary)" }} title="Share exam">
+                      <Share2 size={18} />
+                    </button>
                     <button onClick={() => handleEdit(exam)} className="p-2 rounded hover:bg-opacity-10" style={{ color: "var(--text-secondary)" }}>
                       <Edit size={18} />
                     </button>
@@ -259,6 +274,20 @@ export default function ExamsPage() {
           </div>
         )}
       </div>
+
+      {shareModalOpen && examToShare && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setExamToShare(null);
+          }}
+          contentType="exam"
+          contentId={examToShare.id}
+          contentName={examToShare.name}
+          itemCount={examToShare._count.Question}
+        />
+      )}
     </div>
   );
 }

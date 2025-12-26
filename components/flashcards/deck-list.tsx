@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Folder as FolderIcon, Trash2, Edit2, Play } from "lucide-react";
+import { Folder as FolderIcon, Trash2, Edit2, Play, Share2 } from "lucide-react";
 
 interface Deck {
   id: string;
@@ -19,6 +19,7 @@ interface DeckListProps {
   decks: Deck[];
   onEdit: (deck: Deck) => void;
   onDelete: (id: string) => Promise<void>;
+  onShare?: (deck: Deck) => void;
 }
 
 const colorClasses = {
@@ -30,7 +31,7 @@ const colorClasses = {
   pink: "bg-pink-100 border-pink-300",
 };
 
-export default function DeckList({ decks, onEdit, onDelete }: DeckListProps) {
+export default function DeckList({ decks, onEdit, onDelete, onShare }: DeckListProps) {
   if (decks.length === 0) {
     return (
       <div className="text-center py-12 rounded-lg shadow" style={{ backgroundColor: "var(--surface-secondary)", borderColor: "var(--border)" }}>
@@ -55,6 +56,11 @@ export default function DeckList({ decks, onEdit, onDelete }: DeckListProps) {
               {deck.description && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{deck.description}</p>}
             </div>
             <div className="flex items-center gap-2 ml-2">
+              {onShare && (
+                <button onClick={() => onShare(deck)} className="text-gray-400 hover:text-blue-600 transition-colors duration-300 cursor-pointer" title="Share deck">
+                  <Share2 size={16} />
+                </button>
+              )}
               <button onClick={() => onEdit(deck)} className="text-gray-400 hover:text-blue-600 transition-colors duration-300 cursor-pointer" title="Edit deck">
                 <Edit2 size={16} />
               </button>

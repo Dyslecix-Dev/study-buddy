@@ -108,11 +108,15 @@ export function RecentActivity({ activities }: RecentActivityProps) {
     if (type === 'folder_created') return 'Created folder'
     if (type === 'folder_updated') return 'Updated folder'
     if (type === 'folder_deleted') return 'Deleted folder'
+    if (type === 'folder_shared') return 'Shared folder'
+    if (type === 'folder_received') return 'Received folder'
 
     // Decks
     if (type === 'deck_created') return 'Created deck'
     if (type === 'deck_updated') return 'Updated deck'
     if (type === 'deck_deleted') return 'Deleted deck'
+    if (type === 'deck_shared') return 'Shared deck'
+    if (type === 'deck_received') return 'Received deck'
 
     // Flashcards
     if (type === 'flashcard_created') return 'Created flashcard'
@@ -125,6 +129,8 @@ export function RecentActivity({ activities }: RecentActivityProps) {
     if (type === 'exam_updated') return 'Updated exam'
     if (type === 'exam_deleted') return 'Deleted exam'
     if (type === 'exam_completed') return 'Completed exam'
+    if (type === 'exam_shared') return 'Shared exam'
+    if (type === 'exam_received') return 'Received exam'
 
     // Questions
     if (type === 'question_created') return 'Created question'

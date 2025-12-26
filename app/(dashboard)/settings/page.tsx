@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import DashboardNav from "@/components/dashboard-nav";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Camera, Upload, Eye, EyeOff } from "lucide-react";
+import { Camera, Upload, Eye, EyeOff, User, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { getUserInitials, isDefaultAvatar } from "@/lib/avatar-utils";
 import Button from "@/components/ui/button";
+import SharingSettings from "@/components/share/sharing-settings";
 
-export default function SettingsPage() {
+function SettingsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<"profile" | "sharing">("profile");
   const [user, setUser] = useState<{
     id: string;
     email: string;
@@ -34,7 +37,13 @@ export default function SettingsPage() {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+
+    // Check for tab parameter in URL
+    const tab = searchParams.get("tab");
+    if (tab === "sharing") {
+      setActiveTab("sharing");
+    }
+  }, [searchParams]);
 
   const checkAuth = async () => {
     const supabase = createClient();
@@ -185,7 +194,46 @@ export default function SettingsPage() {
           Settings
         </h1>
 
-        <div className="rounded-lg shadow p-6 mb-6" style={{ backgroundColor: "var(--surface)" }}>
+        {/* Tabs */}
+        <div className="flex gap-4 mb-6 border-b" style={{ borderColor: "var(--border)" }}>
+          <button
+            onClick={() => setActiveTab("profile")}
+            className="flex items-center gap-2 px-4 py-3 font-medium text-sm transition-colors relative"
+            style={{
+              color: activeTab === "profile" ? "var(--primary)" : "var(--text-secondary)",
+            }}
+          >
+            <User size={18} />
+            Profile
+            {activeTab === "profile" && (
+              <div
+                className="absolute bottom-0 left-0 right-0 h-0.5"
+                style={{ backgroundColor: "var(--primary)" }}
+              />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("sharing")}
+            className="flex items-center gap-2 px-4 py-3 font-medium text-sm transition-colors relative"
+            style={{
+              color: activeTab === "sharing" ? "var(--primary)" : "var(--text-secondary)",
+            }}
+          >
+            <Share2 size={18} />
+            Sharing
+            {activeTab === "sharing" && (
+              <div
+                className="absolute bottom-0 left-0 right-0 h-0.5"
+                style={{ backgroundColor: "var(--primary)" }}
+              />
+            )}
+          </button>
+        </div>
+
+        {/* Profile Tab */}
+        {activeTab === "profile" && (
+          <>
+            <div className="rounded-lg shadow p-6 mb-6" style={{ backgroundColor: "var(--surface)" }}>
           <h2 className="text-xl font-semibold mb-4" style={{ color: "var(--text-primary)" }}>
             Profile
           </h2>
@@ -409,7 +457,25 @@ export default function SettingsPage() {
             </Button>
           </form>
         </div>
+          </>
+        )}
+
+        {/* Sharing Tab */}
+        {activeTab === "sharing" && <SharingSettings />}
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
+        <DashboardNav />
+        <LoadingSpinner message="Loading settings..." />
+      </div>
+    }>
+      <SettingsContent />
+    </Suspense>
   );
 }

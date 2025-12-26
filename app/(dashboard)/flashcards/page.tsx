@@ -9,6 +9,7 @@ import { Plus } from "lucide-react";
 import DeckList from "@/components/flashcards/deck-list";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
+import ShareModal from "@/components/share/share-modal";
 
 interface Deck {
   id: string;
@@ -34,6 +35,12 @@ export default function FlashcardsPage() {
     color: "",
   });
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [deckToShare, setDeckToShare] = useState<{
+    id: string;
+    name: string;
+    _count: { Flashcard: number };
+  } | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -170,6 +177,11 @@ export default function FlashcardsPage() {
     setShowForm(false);
     setEditingDeck(null);
     setFormData({ name: "", description: "", color: "" });
+  };
+
+  const handleShare = (deck: Deck) => {
+    setDeckToShare(deck);
+    setShareModalOpen(true);
   };
 
   if (loading) {
@@ -315,7 +327,7 @@ export default function FlashcardsPage() {
           </form>
         )}
 
-        <DeckList decks={decks} onEdit={handleEdit} onDelete={handleDeleteDeck} />
+        <DeckList decks={decks} onEdit={handleEdit} onDelete={handleDeleteDeck} onShare={handleShare} />
       </div>
 
       <DeleteConfirmModal
@@ -325,6 +337,20 @@ export default function FlashcardsPage() {
         title="Delete Deck?"
         description="Are you sure you want to delete this deck? All flashcards will be deleted."
       />
+
+      {shareModalOpen && deckToShare && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setDeckToShare(null);
+          }}
+          contentType="deck"
+          contentId={deckToShare.id}
+          contentName={deckToShare.name}
+          itemCount={deckToShare._count.Flashcard}
+        />
+      )}
     </div>
   );
 }

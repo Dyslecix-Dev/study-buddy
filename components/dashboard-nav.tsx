@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import SearchTrigger from "@/components/search/search-trigger";
 import AvatarDropdown from "@/components/avatar-dropdown";
+import NotificationBell from "@/components/share/notification-bell";
 import { Menu, X, FileText, CheckSquare, Brain, Timer, BookOpen, Settings, LogOut, Search, Bug, Trophy, Calendar, Network, Tag } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -261,6 +262,7 @@ export default function DashboardNav() {
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-4">
               <SearchTrigger />
+              <NotificationBell />
               {isLoading ? <div className="w-10 h-10 rounded-full animate-pulse" style={{ backgroundColor: "var(--surface-secondary)" }} /> : user && <AvatarDropdown user={user} />}
             </div>
 

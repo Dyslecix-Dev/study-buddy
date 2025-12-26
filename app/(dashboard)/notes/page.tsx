@@ -10,6 +10,7 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { Plus, Network } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
+import ShareModal from "@/components/share/share-modal";
 
 interface Folder {
   id: string;
@@ -33,6 +34,12 @@ export default function NotesPage() {
     color: "",
   });
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [folderToShare, setFolderToShare] = useState<{
+    id: string;
+    name: string;
+    _count: { notes: number };
+  } | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -138,6 +145,11 @@ export default function NotesPage() {
     setShowCreateForm(false);
     setEditingFolder(null);
     setFormData({ name: "", description: "", color: "" });
+  };
+
+  const handleShare = (folder: Folder) => {
+    setFolderToShare(folder);
+    setShareModalOpen(true);
   };
 
   if (loading) {
@@ -296,7 +308,7 @@ export default function NotesPage() {
         )}
 
         {/* Folders List */}
-        <FolderList folders={folders} onEdit={handleEdit} onDelete={handleDelete} />
+        <FolderList folders={folders} onEdit={handleEdit} onDelete={handleDelete} onShare={handleShare} />
       </div>
 
       <DeleteConfirmModal
@@ -306,6 +318,20 @@ export default function NotesPage() {
         title="Delete Folder?"
         description="Are you sure you want to delete this folder? Notes inside will not be deleted."
       />
+
+      {shareModalOpen && folderToShare && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setFolderToShare(null);
+          }}
+          contentType="folder"
+          contentId={folderToShare.id}
+          contentName={folderToShare.name}
+          itemCount={folderToShare._count.notes}
+        />
+      )}
     </div>
   );
 }

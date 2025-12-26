@@ -267,26 +267,29 @@ model QuestionResult {
 }
 
 model User {
-  id               String             @id
-  email            String             @unique
-  name             String?
-  image            String?
-  emailVerified    DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  ActivityLog      ActivityLog[]
-  DailyProgress    DailyProgress[]
-  Deck             Deck[]
-  Exam             Exam[]
-  ExamAttempt      ExamAttempt[]
-  Folder           Folder[]
-  FocusSession     FocusSession[]
-  Note             Note[]
-  StudySession     StudySession[]
-  Tag              Tag[]
-  Task             Task[]
-  UserProgress     UserProgress?
-  UserAchievement  UserAchievement[]
+  id                       String              @id
+  email                    String              @unique
+  name                     String?
+  image                    String?
+  emailVerified            DateTime?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  ActivityLog              ActivityLog[]
+  DailyProgress            DailyProgress[]
+  Deck                     Deck[]
+  Exam                     Exam[]
+  ExamAttempt              ExamAttempt[]
+  Folder                   Folder[]
+  FocusSession             FocusSession[]
+  Note                     Note[]
+  StudySession             StudySession[]
+  Tag                      Tag[]
+  Task                     Task[]
+  UserProgress             UserProgress?
+  UserAchievement          UserAchievement[]
+  ShareRequestsSent        ShareRequest[]      @relation("ShareRequestSender")
+  ShareRequestsReceived    ShareRequest[]      @relation("ShareRequestRecipient")
+  ShareNotification        ShareNotification[]
 
   @@index([email])
 }
@@ -357,4 +360,48 @@ model UserAchievement {
   @@index([achievementId])
   @@index([userId, unlockedAt])
   @@index([userId, seen])
+}
+
+model ShareRequest {
+  id             String   @id @default(uuid())
+  senderId       String   // User who is sharing
+  recipientEmail String   // Email of recipient (validated against User table)
+  recipientId    String?  // Populated when recipient is found
+  contentType    String   // 'folder', 'deck', 'exam'
+  contentId      String   // ID of the folder/deck/exam being shared
+  contentName    String   // Name of the item for display
+  status         String   @default("pending") // 'pending', 'accepted', 'rejected', 'cancelled'
+  itemCount      Int      // Number of items (notes in folder, flashcards in deck, questions in exam)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  respondedAt    DateTime? // When recipient accepted/rejected
+
+  Sender         User     @relation("ShareRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  Recipient      User?    @relation("ShareRequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([recipientEmail])
+  @@index([status])
+  @@index([recipientId, status])
+  @@index([senderId, status])
+}
+
+model ShareNotification {
+  id              String   @id @default(uuid())
+  userId          String   // User who receives this notification
+  shareRequestId  String   // Related share request
+  type            String   // 'incoming_share', 'share_accepted', 'share_rejected'
+  title           String   // Display title
+  message         String   // Notification message
+  read            Boolean  @default(false)
+  dismissed       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  User            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, dismissed])
+  @@index([userId, createdAt])
+  @@index([shareRequestId])
 }
