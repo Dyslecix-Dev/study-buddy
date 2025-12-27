@@ -290,6 +290,7 @@ model User {
   ShareRequestsSent        ShareRequest[]      @relation("ShareRequestSender")
   ShareRequestsReceived    ShareRequest[]      @relation("ShareRequestRecipient")
   ShareNotification        ShareNotification[]
+  SearchHistory            SearchHistory[]
 
   @@index([email])
 }
@@ -404,4 +405,17 @@ model ShareNotification {
   @@index([userId, dismissed])
   @@index([userId, createdAt])
   @@index([shareRequestId])
+}
+
+model SearchHistory {
+  id          String   @id @default(uuid())
+  userId      String
+  query       String
+  filters     Json?    // Store search filters as JSON
+  resultCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  User        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId])
 }
