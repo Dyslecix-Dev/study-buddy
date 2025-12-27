@@ -57,12 +57,23 @@ npx prisma db push      # Push schema changes
 
 ## Documentation
 
-- [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) - Deploy to Vercel
-- [docs/TESTING_QUICKSTART.md](./docs/TESTING_QUICKSTART.md) - Testing
-- [docs/TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md) - Common issues
-- [docs/features/](./docs/features/) - Feature guides
-- [docs/AI_EXAM_GENERATION.md](./docs/AI_EXAM_GENERATION.md) - AI exam generation
-- [docs/AI_FLASHCARD_GENERATION.md](./docs/AI_FLASHCARD_GENERATION.md) - AI flashcard generation
+**Setup & Operations:**
+
+- [DEPLOYMENT.md](./docs/DEPLOYMENT.md) - Deploy to Vercel
+- [TESTING_QUICKSTART.md](./docs/TESTING_QUICKSTART.md) - Run tests
+- [TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md) - Common issues
+
+**Features:**
+
+- [GAMIFICATION.md](./docs/features/GAMIFICATION.md) - XP, levels, 60 achievements
+- [NOTE_LINKING.md](./docs/features/NOTE_LINKING.md) - Wiki `[[links]]`
+- [SHARING.md](./docs/features/SHARING.md) - Share folders/decks/exams
+- [SPACED_REPETITION.md](./docs/features/SPACED_REPETITION.md) - SM-2 flashcard algorithm
+- [AI_GENERATION.md](./docs/AI_GENERATION.md) - Auto-generate flashcards/exams
+
+**Reference:**
+
+- [UI_COMPONENTS.md](./docs/components/UI_COMPONENTS.md) - Design system
 
 ## Add Gamification
 

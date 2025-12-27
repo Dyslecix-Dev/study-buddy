@@ -44,7 +44,14 @@
 
 ## macOS
 
-**File descriptors:** `ulimit -n 65536` (see [FILE_DESCRIPTOR_LIMITS_MACOS.md](./FILE_DESCRIPTOR_LIMITS_MACOS.md))
+**File descriptors (EMFILE error):**
+
+```bash
+ulimit -n 65536
+echo 'ulimit -n 65536' >> ~/.zshrc && source ~/.zshrc
+```
+
+Verify: `launchctl limit maxfiles`. Clean: `rm -rf .next .turbo node_modules/.cache && npm run build`
 
 ## Reset
 
