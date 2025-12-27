@@ -152,6 +152,44 @@ export default function NotesPage() {
     setShareModalOpen(true);
   };
 
+  const handleExport = async (folderId: string) => {
+    try {
+      const folder = folders.find((f) => f.id === folderId);
+      if (!folder) return;
+
+      if (folder._count.notes === 0) {
+        toast.error("Cannot export an empty folder");
+        return;
+      }
+
+      toast.loading("Preparing export...");
+
+      const response = await fetch(`/api/folders/${folderId}/export`);
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = response.headers.get("Content-Disposition")?.split("filename=")[1]?.replace(/"/g, "") || `${folder.name}.md`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        toast.dismiss();
+        toast.success("Folder exported successfully");
+      } else {
+        const error = await response.json();
+        toast.dismiss();
+        toast.error(error.error || "Failed to export folder");
+      }
+    } catch (error) {
+      toast.dismiss();
+      toast.error("An error occurred while exporting");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
@@ -308,7 +346,7 @@ export default function NotesPage() {
         )}
 
         {/* Folders List */}
-        <FolderList folders={folders} onEdit={handleEdit} onDelete={handleDelete} onShare={handleShare} />
+        <FolderList folders={folders} onEdit={handleEdit} onDelete={handleDelete} onShare={handleShare} onExport={handleExport} />
       </div>
 
       <DeleteConfirmModal

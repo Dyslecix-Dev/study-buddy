@@ -184,6 +184,44 @@ export default function FlashcardsPage() {
     setShareModalOpen(true);
   };
 
+  const handleExport = async (deckId: string) => {
+    try {
+      const deck = decks.find((d) => d.id === deckId);
+      if (!deck) return;
+
+      if (deck._count.Flashcard === 0) {
+        toast.error("Cannot export an empty deck");
+        return;
+      }
+
+      toast.loading("Preparing export...");
+
+      const response = await fetch(`/api/decks/${deckId}/export`);
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = response.headers.get("Content-Disposition")?.split("filename=")[1]?.replace(/"/g, "") || `${deck.name}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        toast.dismiss();
+        toast.success("Deck exported successfully");
+      } else {
+        const error = await response.json();
+        toast.dismiss();
+        toast.error(error.error || "Failed to export deck");
+      }
+    } catch (error) {
+      toast.dismiss();
+      toast.error("An error occurred while exporting");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
@@ -327,7 +365,7 @@ export default function FlashcardsPage() {
           </form>
         )}
 
-        <DeckList decks={decks} onEdit={handleEdit} onDelete={handleDeleteDeck} onShare={handleShare} />
+        <DeckList decks={decks} onEdit={handleEdit} onDelete={handleDeleteDeck} onShare={handleShare} onExport={handleExport} />
       </div>
 
       <DeleteConfirmModal
