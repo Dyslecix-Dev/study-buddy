@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { advancedSearch, SearchFilters } from "@/lib/advanced-search";
+import { advancedSearch, SearchFilters } from "@/lib/fuse-search";
 
 // GET /api/search/advanced - Perform advanced search with filters
 export async function GET(request: NextRequest) {

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
 import { FileText, CheckSquare, Brain, X, Folder, Library, Hash, Filter, Clock } from "lucide-react";
-import { SearchFilters } from "@/lib/advanced-search";
+import { SearchFilters } from "@/lib/fuse-search";
 import SearchFiltersComponent from "./search-filters";
 import TagBadge from "@/components/tags/tag-badge";
 

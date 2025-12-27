@@ -1,35 +1,36 @@
-# 1. Verify the launch daemons are active (should show 65536)
+# Fix File Descriptor Limits (macOS)
 
-launchctl limit maxfiles
+Fix "EMFILE: too many open files" error.
 
-# 2. Open a new terminal and verify your session limit
+## Quick Fix
 
-ulimit -n
+```bash
+ulimit -n 65536
+echo 'ulimit -n 65536' >> ~/.zshrc && source ~/.zshrc
+```
 
-# 3. If step 2 shows less than 65536, add to your shell config
+## Permanent Fix
 
-echo 'ulimit -n 65536' >> ~/.zshrc
+Create `/Library/LaunchDaemons/limit.maxfiles.plist`:
 
-# 4. Reload your shell config
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key><string>limit.maxfiles</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>launchctl</string><string>limit</string><string>maxfiles</string>
+      <string>65536</string><string>200000</string>
+    </array>
+    <key>RunAtLoad</key><true/>
+  </dict>
+</plist>
+```
 
-source ~/.zshrc
+Load: `sudo launchctl load -w /Library/LaunchDaemons/limit.maxfiles.plist`
 
-# 5. Verify again
+Verify: `launchctl limit maxfiles` (should show 65536)
 
-ulimit -n
-
-# 6. Navigate to your project
-
-cd ~/Desktop/code/study-buddy
-
-# 7. Clean all build artifacts
-
-rm -rf .next .turbo node_modules/.cache
-
-# 8. Run your build
-
-npm run build
-
-# Or for development
-
-npm run dev
+Clean: `cd ~/Desktop/code/study-buddy && rm -rf .next .turbo node_modules/.cache && npm run build`

@@ -6,7 +6,7 @@ import Link from "next/link";
 import Editor from "@/components/editor/editor";
 import DashboardNav from "@/components/dashboard-nav";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Trash2, Check } from "lucide-react";
+import { Trash2, Check, Sparkles, FileQuestion } from "lucide-react";
 import DeleteConfirmModal from "@/components/ui/delete-confirm-modal";
 import { toast } from "sonner";
 import { Tag } from "@/lib/tag-utils";
@@ -14,6 +14,8 @@ import TagInput from "@/components/tags/tag-input";
 import { BacklinksPanel } from "@/components/notes/backlinks-panel";
 import { UnlinkedMentions } from "@/components/notes/unlinked-mentions";
 import { BrokenLinksWarning } from "@/components/notes/broken-links-warning";
+import GenerateFlashcardsModal from "@/components/ai/generate-flashcards-modal";
+import GenerateExamModal from "@/components/ai/generate-exam-modal";
 
 interface LinkedNote {
   id: string;
@@ -35,6 +37,8 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [pendingNavigationNoteId, setPendingNavigationNoteId] = useState<string | null>(null);
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [showGenerateExamModal, setShowGenerateExamModal] = useState(false);
 
   // Fetch note on mount
   useEffect(() => {
@@ -291,6 +295,14 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
     }
   };
 
+  const handleFlashcardsGenerated = (deckId: string) => {
+    router.push(`/flashcards/${deckId}`);
+  };
+
+  const handleExamGenerated = (examId: string) => {
+    router.push(`/exams/${examId}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: "var(--background)" }}>
@@ -328,10 +340,34 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
               {!saving && !saved && "Unsaved changes"}
             </div>
           </div>
-          <button onClick={() => setDeleteConfirm(true)} className="flex items-center text-sm text-red-600 hover:text-red-700 transition-colors duration-300 cursor-pointer">
-            <Trash2 size={18} className="mr-1" />
-            Delete
-          </button>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowGenerateModal(true)}
+              className="flex items-center text-sm px-3 py-1.5 rounded-md transition-colors duration-300 cursor-pointer"
+              style={{
+                backgroundColor: "var(--primary)",
+                color: "white",
+              }}
+            >
+              <Sparkles size={16} className="mr-1.5" />
+              Generate Flashcards
+            </button>
+            <button
+              onClick={() => setShowGenerateExamModal(true)}
+              className="flex items-center text-sm px-3 py-1.5 rounded-md border transition-colors duration-300 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+              style={{
+                borderColor: "var(--primary)",
+                color: "var(--primary)",
+              }}
+            >
+              <FileQuestion size={16} className="mr-1.5" />
+              Generate Exam
+            </button>
+            <button onClick={() => setDeleteConfirm(true)} className="flex items-center text-sm text-red-600 hover:text-red-700 transition-colors duration-300 cursor-pointer">
+              <Trash2 size={18} className="mr-1" />
+              Delete
+            </button>
+          </div>
         </div>
 
         <div className="mb-6">
@@ -401,6 +437,22 @@ export default function NoteEditorPage({ params }: { params: Promise<{ folderId:
         description="You have unsaved changes. Are you sure you want to leave? Your changes will be lost."
         confirmText="Leave Without Saving"
         cancelText="Stay on Page"
+      />
+
+      <GenerateFlashcardsModal
+        isOpen={showGenerateModal}
+        onClose={() => setShowGenerateModal(false)}
+        noteId={noteId}
+        noteTitle={title}
+        onSuccess={handleFlashcardsGenerated}
+      />
+
+      <GenerateExamModal
+        isOpen={showGenerateExamModal}
+        onClose={() => setShowGenerateExamModal(false)}
+        noteId={noteId}
+        noteTitle={title}
+        onSuccess={handleExamGenerated}
       />
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Filter, X, Calendar, Tag, CheckSquare, FileText, Brain, Folder } from "lucide-react";
-import { SearchFilters } from "@/lib/advanced-search";
+import { SearchFilters } from "@/lib/fuse-search";
 
 interface SearchFiltersProps {
   filters: SearchFilters;
